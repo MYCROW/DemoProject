@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:title="@string/add_op"
+        android:id="@+id/add_Item"
+        android:icon="@drawable/add_icon"
+        android:showAsAction="always">
+    </item>
+        <!--android:showAsAction="always"/>-->
+</menu>

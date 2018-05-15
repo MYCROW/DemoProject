@@ -17,7 +17,6 @@ public class MainFragmentPagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
-        Log.i("ContentValues", ""+position);
         if(position == 0)
             return DownloadFragment.newInstance(position + 1);
         else

@@ -5,12 +5,30 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <style name="MainTheme" parent="Theme.AppCompat">
+        <item name="android:windowNoTitle">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:fitsSystemWindows">true</item>
+        <item name="android:clipToPadding">true</item>
+    </style>
+
     <style name="SplashTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/test_backgroud</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:fitsSystemWindows">true</item>
         <item name="android:clipToPadding">true</item>
+    </style>
+
+    <style name="TabLayoutStyle" parent="Widget.Design.TabLayout">
+        <!--tab的布局-->
+        <item name="tabGravity">fill</item>
+        <!--tab下面的滚动条的颜色-->
+        <item name="tabIndicatorColor">#ff3355</item>
+        <!--tab背景颜色-->
+        <item name="tabBackground">@color/colorPrimary</item>
+        <!--将tab设置成固定-->
+        <item name="tabMode">fixed</item>
     </style>
 
 </resources>

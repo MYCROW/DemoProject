@@ -1,15 +1,35 @@
 package com.example.crow.demoproject;
 
 import android.app.Activity;
+import android.net.Uri;
+import android.support.v4.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.widget.TableLayout;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity
+//        implements DownloadFragment.OnFragmentInteractionListener
+{
+    private MainFragmentPagerAdapter pagerAdapter;
+
+    private ViewPager viewPager;
+
+    private TabLayout tabLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        pagerAdapter = new MainFragmentPagerAdapter(getSupportFragmentManager(), this);
+        viewPager = (ViewPager) findViewById(R.id.viewPager);
+        viewPager.setAdapter(pagerAdapter);
+        tabLayout = (TabLayout) findViewById(R.id.tabList);
+        tabLayout.setupWithViewPager(viewPager);
+        tabLayout.setTabMode(TabLayout.MODE_FIXED);
     }
 
     @Override
@@ -21,4 +41,9 @@ public class MainActivity extends Activity {
         intent.addCategory(Intent.CATEGORY_HOME);
         startActivity(intent);
     }
+
+    //implements DownloadFragment.OnFragmentInteractionListener
+//    public void onFragmentInteraction(Uri uri){
+//        //you can leave it empty
+//    }
 }

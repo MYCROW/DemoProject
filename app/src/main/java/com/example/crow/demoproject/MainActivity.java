@@ -1,6 +1,8 @@
 package com.example.crow.demoproject;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.net.Uri;
 import android.support.v4.app.Fragment;
 import android.content.Intent;
@@ -10,9 +12,12 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.Toast;
 
@@ -50,7 +55,7 @@ public class MainActivity extends FragmentActivity{
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.add_Item:
-                Toast.makeText(this, "你点击了“添加”按键！", Toast.LENGTH_SHORT).show();
+                add_DownloadMission();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -67,8 +72,39 @@ public class MainActivity extends FragmentActivity{
         startActivity(intent);
     }
 
-    //implements DownloadFragment.OnFragmentInteractionListener
-//    public void onFragmentInteraction(Uri uri){
-//        //you can leave it empty
-//    }
+    //function 新增下载任务
+    public void add_DownloadMission(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        //    设置Title的图标
+//        builder.setIcon(R.drawable.add_icon);
+        //    设置Title的内容
+        builder.setTitle("下载地址输入");
+        //    设置自定义的弹出框
+        View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.addmission_dialog, null);
+        builder.setView(view);
+        final EditText downloadAddr = (EditText)view.findViewById(R.id.downloadAddr);
+
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                //判断下载地址合法性
+
+                //开始下载
+                Toast.makeText(MainActivity.this, "下载地址：" + downloadAddr.getText(), Toast.LENGTH_SHORT).show();
+            }
+        });
+        //
+        builder.setNegativeButton("取消", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                Toast.makeText(MainActivity.this, "取消下载" , Toast.LENGTH_SHORT).show();
+            }
+        });
+        //    显示出该对话框
+        builder.show();
+    }
 }

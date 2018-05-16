@@ -34,7 +34,7 @@ public class SplashActivity extends Activity {
     private Handler handler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
-            System.out.println("InMainActivity = " + InMainActivity);
+//            System.out.println("InMainActivity = " + InMainActivity);
             //如果InMainActivity == false，则进入MainActivity，为了避免重复进入MainActivity
             if (InMainActivity == false) {
                 super.handleMessage(msg);

@@ -111,16 +111,17 @@ public class MainActivity extends FragmentActivity{
         //    设置自定义的弹出框
         View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.addmission_dialog, null);
         builder.setView(view);
+        final EditText downloadAddr = (EditText)view.findViewById(R.id.downloadAddr);
         builder.setPositiveButton("确定", null);
         builder.setNegativeButton("取消", new DialogInterface.OnClickListener()
         {
             @Override
             public void onClick(DialogInterface dialog, int which)
             {
-                Toast.makeText(MainActivity.this, "取消下载" , Toast.LENGTH_SHORT).show();
+                if(downloadAddr.getText().length()!=0)
+                    Toast.makeText(MainActivity.this, "取消下载" , Toast.LENGTH_SHORT).show();
             }
         });
-        final EditText downloadAddr = (EditText)view.findViewById(R.id.downloadAddr);
         final android.app.AlertDialog alert = builder.create();
         alert.show();
         Button positiveButton = alert.getButton(DialogInterface.BUTTON_POSITIVE);

@@ -13,6 +13,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.crow.demoproject.download.*;
+
 import static android.content.ContentValues.TAG;
 
 public class DownloadFragment extends Fragment {
@@ -20,6 +22,9 @@ public class DownloadFragment extends Fragment {
     public static final String ARG_PAGE = "ARG_PAGE";
     private int mPage;
     private Context mContext;
+
+    private DB_DownloadOperator testDB;
+
 
     public static DownloadFragment newInstance(int page) {
         Bundle args = new Bundle();
@@ -35,6 +40,7 @@ public class DownloadFragment extends Fragment {
         mPage = getArguments().getInt(ARG_PAGE);
 
         mContext = getActivity();
+//        testDB = new DB_DownloadOperator(mContext);
     }
 
     @Nullable

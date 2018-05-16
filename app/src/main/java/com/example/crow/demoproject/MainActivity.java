@@ -2,6 +2,8 @@ package com.example.crow.demoproject;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.FragmentManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
 import android.support.v4.app.Fragment;
@@ -17,9 +19,14 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.Toast;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
 
 public class MainActivity extends FragmentActivity{
 //        implements DownloadFragment.OnFragmentInteractionListener
@@ -28,6 +35,11 @@ public class MainActivity extends FragmentActivity{
     private ViewPager viewPager;
 
     private TabLayout tabLayout;
+
+    private DownloadFragment downloadFragment;
+    private FinishFragment finishFragment;
+    public boolean getDownloadFragment;
+    public boolean getFinishFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +51,23 @@ public class MainActivity extends FragmentActivity{
         tabLayout = (TabLayout) findViewById(R.id.tabList);
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.setTabMode(TabLayout.MODE_FIXED);
+
+        getDownloadFragment = false;
+        getFinishFragment = false;
+        loadFragment();
+    }
+
+    void loadFragment(){
+        if(getFinishFragment && getFinishFragment)
+            return;
+        if(pagerAdapter.getDownloadFragment == true) {
+            this.downloadFragment = pagerAdapter.downloadFragment;
+            getDownloadFragment = true;
+        }
+        if(pagerAdapter.getFinishFragment == true){
+            this.finishFragment = pagerAdapter.finishFragment;
+            getFinishFragment = true;
+        }
     }
 
     @Override
@@ -82,20 +111,7 @@ public class MainActivity extends FragmentActivity{
         //    设置自定义的弹出框
         View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.addmission_dialog, null);
         builder.setView(view);
-        final EditText downloadAddr = (EditText)view.findViewById(R.id.downloadAddr);
-
-        builder.setPositiveButton("确定", new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                //判断下载地址合法性
-
-                //开始下载
-                Toast.makeText(MainActivity.this, "下载地址：" + downloadAddr.getText(), Toast.LENGTH_SHORT).show();
-            }
-        });
-        //
+        builder.setPositiveButton("确定", null);
         builder.setNegativeButton("取消", new DialogInterface.OnClickListener()
         {
             @Override
@@ -104,7 +120,26 @@ public class MainActivity extends FragmentActivity{
                 Toast.makeText(MainActivity.this, "取消下载" , Toast.LENGTH_SHORT).show();
             }
         });
-        //    显示出该对话框
-        builder.show();
+        final EditText downloadAddr = (EditText)view.findViewById(R.id.downloadAddr);
+        final android.app.AlertDialog alert = builder.create();
+        alert.show();
+        Button positiveButton = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+        positiveButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                //判断下载地址合法性
+                if(downloadAddr.getText().length()==0){
+                    Toast.makeText(MainActivity.this, "请输入下载地址", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                //开始下载
+                else{
+                    loadFragment();
+                    downloadFragment.add_DownloadMission(downloadAddr.getText());
+                }
+                alert.dismiss();
+            }
+        });
     }
+
 }

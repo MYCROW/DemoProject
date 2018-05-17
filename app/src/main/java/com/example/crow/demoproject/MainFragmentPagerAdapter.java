@@ -5,6 +5,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 
 public class MainFragmentPagerAdapter extends FragmentPagerAdapter {
     private String tabTitles[] = new String[]{"下载中","已完成"};
@@ -24,14 +26,13 @@ public class MainFragmentPagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
-//        Log.i("ContentValues","getItem");
         if(position == 0) {
-            downloadFragment = DownloadFragment.newInstance(position + 1);
+            downloadFragment = DownloadFragment.newInstance(position);
             getDownloadFragment = true;
             return downloadFragment;
         }
         else {
-            finishFragment = FinishFragment.newInstance(position+1);
+            finishFragment = FinishFragment.newInstance(position);
             getFinishFragment = true;
             return finishFragment;
         }
@@ -45,5 +46,23 @@ public class MainFragmentPagerAdapter extends FragmentPagerAdapter {
     @Override
     public CharSequence getPageTitle(int position) {
         return tabTitles[position];
+    }
+
+    @Override
+    public boolean isViewFromObject(View view, Object object)
+    {
+        return super.isViewFromObject(view,object);
+    }
+
+    @Override
+    public Object instantiateItem(ViewGroup container, int position) {
+        if(position == 0) {
+            DownloadFragment fragment = (DownloadFragment) super.instantiateItem(container, position);
+            return fragment;
+        }
+        else{
+            FinishFragment fragment = (FinishFragment) super.instantiateItem(container, position);
+            return fragment;
+        }
     }
 }

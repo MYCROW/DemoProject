@@ -2,7 +2,6 @@ package com.example.crow.demoproject;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
@@ -75,7 +74,7 @@ public class MainActivity extends FragmentActivity{
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-        Log.i("ContentValues","Run");
+//        Log.i("ContentValues","Run");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -136,7 +135,7 @@ public class MainActivity extends FragmentActivity{
                 //开始下载
                 else{
                     loadFragment();
-                    downloadFragment.add_DownloadMission(downloadAddr.getText());
+                    downloadFragment.add_DownloadTask(downloadAddr.getText());
                 }
                 alert.dismiss();
             }

@@ -9,6 +9,7 @@ import java.net.URL;
 import android.util.Log;
 
 public class DownloadThread extends Thread{
+    private static final String TAG = "下载线程类";
     private File saveFile;              //下载的数据保存到的文件
     private URL downUrl;              //下载的URL
     private int block;                //每条线程下载的大小
@@ -24,6 +25,11 @@ public class DownloadThread extends Thread{
         this.downloadManager = downloader;
         this.threadId = threadId;
         this.downLength = downLength;
+    }
+
+    @Override
+    public void run(){
+
     }
 
 }

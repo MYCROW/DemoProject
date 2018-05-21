@@ -127,7 +127,7 @@ public class MainActivity extends FragmentActivity{
         positiveButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                //判断下载地址合法性
+                //判断下载地址是否为空
                 if(downloadAddr.getText().length()==0){
                     Toast.makeText(MainActivity.this, "请输入下载地址", Toast.LENGTH_SHORT).show();
                     return;

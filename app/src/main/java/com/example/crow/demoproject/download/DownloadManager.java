@@ -33,7 +33,7 @@ public class DownloadManager {
 
     //public DB_DownloadOperator getDb_downloadOperator(){return db_downloadOperator;}
 
-    private DownloadTask getTaskbyFilename(String filename){
+    public DownloadTask getTaskbyFilename(String filename){
         for(int i=0;i<taskList.size();i++){
             if(filename.equals(taskList.get(i).getFilename()))
                 return taskList.get(i);

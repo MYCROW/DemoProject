@@ -1,19 +1,35 @@
 package com.example.crow.demoproject;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.example.crow.demoproject.download.DownloadTask;
+
+import java.util.ArrayList;
+
+import static android.content.ContentValues.TAG;
 
 
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link FinishFragment.OnFragmentInteractionListener} interface
+ * {@link //FinishFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
  * Use the {@link FinishFragment#newInstance} factory method to
  * create an instance of this fragment.
@@ -21,6 +37,8 @@ import android.view.ViewGroup;
 public class FinishFragment extends Fragment {
     public static final String ARG_PAGE = "ARG_PAGE";
     private int mPage;
+    private Context mContext;
+    private ArrayList<DownloadTask>  taskList;
 
     public static FinishFragment newInstance(int page) {
         Bundle args = new Bundle();
@@ -34,12 +52,157 @@ public class FinishFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mPage = getArguments().getInt(ARG_PAGE);
+        mContext = getActivity();
+        id = new ID();
+        taskList = new ArrayList<>();
     }
 
+    private LinearLayout finishList;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_finish, container, false);
+        finishList = (LinearLayout)view.findViewById(R.id.finishList);
         return view;
     }
+
+    public void setTask(DownloadTask task){
+        Log.i(TAG,task.getFilename()+" finished");
+        show(task);
+    }
+
+    public void del_Task(int task_ID){
+
+    }
+
+    public void check_Task(int task_ID){
+
+    }
+
+    public void reDown_Task(int task_ID){
+
+    }
+
+    //ID regular
+    //ID = ID_offset*idbase + UI_offset
+    private int ID_offset = 4;
+    public class UI_offset {
+        public final static int CHECK_BTN = 0;
+        public final static int DEL_BTN = 1;
+        public final static int TEXT_VIEW = 2;
+        public final static int TASK_ID =3;
+    }
+
+    private class ID{
+        private ArrayList<Integer> id_pool;
+        public ID(){
+            id_pool = new ArrayList<Integer>();
+        }
+        public Integer getID(){
+            Integer id;
+            if(id_pool.contains(-1))
+            {
+                int d = id_pool.indexOf(-1);
+                id_pool.remove(d);
+                id_pool.add(d,d);
+                id = d;
+            }
+            else {
+                id = id_pool.size();
+                id_pool.add(id_pool.size());
+            }
+            return id;
+        }
+        public void removeID(int ID){
+            id_pool.set(ID,-1);
+        }
+    }
+    private ID id;
+    public final String CHECK_SIGN = "查看细节";
+    public final String DELETE_SIGN = "删除记录";
+
+    public void show(DownloadTask task){
+        int idbase = id.getID();
+        final String filename = task.getFilename();
+        // 显示DownloadTask的控件并添加到自定义布局中
+        //1.最外层LinearLayout
+        LinearLayout taskLayout = new LinearLayout(mContext);
+        LinearLayout.LayoutParams taskLayoutParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        taskLayout.setLayoutParams(taskLayoutParams);
+        //透明背景
+        taskLayout.setBackgroundColor(Color.argb(0, 255, 255, 0));
+        taskLayout.setOrientation(LinearLayout.VERTICAL);
+        //最外层LinearLayout ID
+        taskLayout.setId(idbase*ID_offset+ UI_offset.TASK_ID);
+        //1.1 内层 RelativeLayout
+        RelativeLayout controlLayout = new RelativeLayout(mContext);
+        RelativeLayout.LayoutParams controlLayoutParams = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        controlLayout.setLayoutParams(controlLayoutParams);
+        //显示文件名 TextView
+        //1.1.1 TextView布局 靠左
+        RelativeLayout.LayoutParams tvAddParam = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        tvAddParam.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        TextView filename_text = new TextView(mContext);
+        filename_text.setText(filename);
+        filename_text.setLayoutParams(tvAddParam);
+        //TextView ID
+        filename_text.setId(idbase*ID_offset+ UI_offset.TEXT_VIEW);
+
+        //1.1.2查看信息按钮 Button按钮布局 靠右
+        RelativeLayout.LayoutParams btnAddParam = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        // 靠右放置
+        btnAddParam.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        final Button beg_pau_btn = new Button(mContext);
+        beg_pau_btn.setText(CHECK_SIGN);
+        beg_pau_btn.setLayoutParams(btnAddParam);
+        //查看信息按钮ID
+        beg_pau_btn.setId(idbase*ID_offset+ UI_offset.CHECK_BTN);
+
+        //1.1.3删除按钮 Button按钮布局 查看信息的左边
+        RelativeLayout.LayoutParams btnDelParam = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        btnDelParam.addRule(RelativeLayout.LEFT_OF, beg_pau_btn.getId());
+        btnDelParam.addRule(RelativeLayout.RIGHT_OF, filename_text.getId());
+        final Button del_btn = new Button(mContext);
+        del_btn.setText(DELETE_SIGN);
+        del_btn.setLayoutParams(btnDelParam);
+        //删除按钮ID
+        del_btn.setId(idbase*ID_offset+ UI_offset.DEL_BTN);
+
+
+        //查看信息按钮事件
+        beg_pau_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+        //删除按钮事件
+        del_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
+        controlLayout.addView(filename_text);
+        controlLayout.addView(beg_pau_btn);
+        controlLayout.addView(del_btn);
+        taskLayout.addView(controlLayout,0);
+
+        finishList.addView(taskLayout,-1);
+        task.setId_Fini(idbase);
+
+    }
+
+
 }

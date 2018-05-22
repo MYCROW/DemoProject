@@ -1,5 +1,6 @@
 package com.example.crow.demoproject;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -43,8 +44,9 @@ public class DownloadFragment extends Fragment {
     private DownloadManager downloadManager;
 
     public final int PROCESSING = 1;
-    public final int FAILURE = 0;//?
+    public final int FAILURE = -1;//?
 
+    /**监听进度条**/
     private Handler handler = new UIHander();
     private final class UIHander extends Handler{
         public void handleMessage(Message msg) {
@@ -57,6 +59,7 @@ public class DownloadFragment extends Fragment {
                     progressbar.setProgress(size);         //设置进度条的进度
                     if(progressbar.getProgress() == progressbar.getMax()){ //下载完成时提示
                         Toast.makeText(mContext, "文件下载成功", Toast.LENGTH_SHORT).show();
+                        fin_DownloadTask(id);
                     }
                     break;
 
@@ -83,6 +86,13 @@ public class DownloadFragment extends Fragment {
         downloadManager = new DownloadManager(mContext);
 
         id = new ID();
+
+        //强制实现接口
+        try {
+            mDowFinInterface = (DownloadFinishInterface)getActivity();
+        } catch (Exception e) {
+            throw new ClassCastException(getActivity().toString() + "must implement onDownloadFinish");
+        }
     }
 
     @Override
@@ -98,7 +108,7 @@ public class DownloadFragment extends Fragment {
         baseLayout = (LinearLayout)view.findViewById(R.id.baseList);
         return view;
     }
-
+    /**新增下载任务**/
     public void add_DownloadTask(Editable urlpath){
         File saveDir;
         if(Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)){
@@ -114,9 +124,11 @@ public class DownloadFragment extends Fragment {
         }
         Toast.makeText(mContext, "下载地址："+urlpath ,Toast.LENGTH_SHORT).show();
         show(task);
-        downloadManager.startDownloadTask(task);
+        //downloadManager.startDownloadTask(task);
+        /**test**/
+        fin_DownloadTask(task.getId_List());
     }
-
+    /**删除下载任务**/
     public void del_DownloadTask(int taskID){
         String filename;
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
@@ -143,6 +155,23 @@ public class DownloadFragment extends Fragment {
         downloadManager.pauDownloadTask(filename);
         btn.setText(PAUSE_SIGN);
     }
+
+    /**下载完成：从下载中页面移除，加入完成页面**/
+    //传递信息的接口
+    private DownloadFinishInterface mDowFinInterface;
+    public interface DownloadFinishInterface{
+        public void onDownloadFinish(DownloadTask task);
+    }
+    public void fin_DownloadTask(int taskID){
+        String filename;
+        TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
+        filename = temp.getText().toString();
+        DownloadTask task = downloadManager.getTaskbyFilename(filename);
+        //调用接口
+        mDowFinInterface.onDownloadFinish(task);
+        del_DownloadTask(taskID);
+    }
+
     //ID regular
     //ID = ID_offset*idbase + UI_offset
     private int ID_offset = 5;
@@ -157,10 +186,8 @@ public class DownloadFragment extends Fragment {
     public final String PAUSE_SIGN = "暂停";
     public final String RESUME_SIGN = "开始";
     public final String CANCEL_SIGN = "取消";
-    /**显示一个下载任务在“下载中”列表**/
-    int index = 0;
 
-    public class ID{
+    private class ID{
         private ArrayList<Integer> id_pool;
         public ID(){
             id_pool = new ArrayList<Integer>();
@@ -184,7 +211,7 @@ public class DownloadFragment extends Fragment {
             id_pool.set(ID,-1);
         }
     }
-    ID id;
+    private ID id;
 
     private void show(DownloadTask task){
         //int taskNum = downloadManager.getTaskNum();

@@ -5,6 +5,7 @@ import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -13,7 +14,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.content.Context;
+import android.os.Environment;
 import android.util.Log;
+
+import com.example.crow.demoproject.FinishFragment;
 
 public class DownloadManager {
     private int MAX_NUM_DOWN = 3;//最大同时下载文件数
@@ -22,6 +26,7 @@ public class DownloadManager {
     private DB_DownloadOperator db_downloadOperator;//数据库操作
     private ArrayList<DownloadThread> threads;//根据线程数设置下载的线程池
     private ArrayList<DownloadTask> taskList;//任务池
+    private File saveDir;
 
     Context mContext;
 
@@ -30,14 +35,79 @@ public class DownloadManager {
         mContext = context;
         taskList = new ArrayList<>();
     }
+    /**读取数据库获得所有下载任务（已完成/未完成）**/
+    public ArrayList<DownloadTask> initTaskList(){
+        if(saveDir == null)
+            saveDir = Environment.getExternalStorageDirectory();
+        taskList.clear();
+        Map<String,String> data = db_downloadOperator.getAllFilename_unfinish();
+        for(Map.Entry<String, String> entry:data.entrySet()){
+            DownloadTask temp = new DownloadTask(entry.getKey(),entry.getValue(),saveDir,mContext);
+            temp.setisFinish(false);
+            taskList.add(temp);
+        }
+        data.clear();
+        data = db_downloadOperator.getAllFilename_finish();
+        for(Map.Entry<String, String> entry:data.entrySet()){
+            DownloadTask temp = new DownloadTask(entry.getKey(),entry.getValue(),saveDir,mContext);
+            temp.setisFinish(true);
+            taskList.add(temp);
+        }
+        return taskList;
+    }
 
-    //public DB_DownloadOperator getDb_downloadOperator(){return db_downloadOperator;}
+    /**保存当前任务信息到数据库**/
+    public void storeTaskList() {
+        Map<String, String> data1 = db_downloadOperator.getAllFilename_finish();
+        Map<String, String> data2 = db_downloadOperator.getAllFilename_unfinish();
+        Log.i("DownloadManager", "store");
+        for (int i = 0; i < taskList.size(); i++) {
+            DownloadTask da = taskList.get(i);
+            if (da.getisFinish() == false) {//未完成任务
+                boolean flag = false;
+                for (String key : data2.keySet()) {
+                    String value = data2.get(key);
+                    if (key == da.getFilename()) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag == true)//数据库已存在当前任务信息
+                    continue;
+                else {
+                    Map<Integer, Integer> t = new HashMap<Integer, Integer>();
+                    t.put(0, 0);
+                    t.put(1, 1);
+                    db_downloadOperator.setLength_Thread(da.getDownloadUrl(), da.getFilename(), t, "0");
+                }
+
+            } else {//已完成任务
+                boolean flag = false;
+                for (String key : data2.keySet()) {
+                    String value = data2.get(key);
+                    if (key == da.getFilename()) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag == true)//数据库已存在当前任务信息
+                    continue;
+                else {
+                    Map<Integer, Integer> t = new HashMap<Integer, Integer>();
+                    t.put(0, 0);
+                    t.put(1, 1);
+                    db_downloadOperator.setLength_Thread(da.getDownloadUrl(), da.getFilename(), t, "1");
+                }
+            }
+        }
+    }
 
     public DownloadTask getTaskbyFilename(String filename){
         for(int i=0;i<taskList.size();i++){
             if(filename.equals(taskList.get(i).getFilename()))
                 return taskList.get(i);
         }
+        Log.i("getTaskbyFilename","filename");
         return null;
     }
 
@@ -80,6 +150,7 @@ public class DownloadManager {
         if(filename == "")//创建下载任务失败
             return task;
         taskList.add(task);
+        //数据库操作在结束时同步
         return taskList.get(taskList.size()-1);
     }
     //开启下载任务
@@ -94,24 +165,29 @@ public class DownloadManager {
         DownloadTask task = getTaskbyFilename(filename);
         if(task !=null)
             task.exit();
-        //to be finished
-        taskList.remove(task.getId_List());
-        Log.i("DownloadManager","数据库中删除");
+        db_downloadOperator.delete(task.getDownloadUrl(),filename);
+        for(int i =0;i<taskList.size();i++) {
+            if(taskList.get(i).getFilename().equals(filename))
+                taskList.remove(i);
+        }
+        //Log.i("DownloadManager","数据库中删除");
     }
-
+    /**to be finished**/
     public void resDownloadTask(String filename){
         DownloadTask task = getTaskbyFilename(filename);
         //if(task ==null)
         //to be finished
         startDownloadTask(task);
     }
-
+    /**to be finished**/
     public void pauDownloadTask(String filename){
         DownloadTask task = getTaskbyFilename(filename);
         //to be finished
         if(task !=null)
             task.exit();
     }
+
+    public void setSaveDir(File saveDir){this.saveDir = saveDir;}
 
     public int getTaskSize(){
         return 0;

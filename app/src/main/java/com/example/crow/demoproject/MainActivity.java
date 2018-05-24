@@ -30,7 +30,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 
-public class MainActivity extends FragmentActivity implements DownloadFragment.DownloadFinishInterface,FinishFragment.DownloadDeleteInterface{
+public class MainActivity extends FragmentActivity implements DownloadFragment.DownloadFinishInterface,
+        DownloadFragment.DownloadInitInterface,
+        FinishFragment.DownloadDeleteInterface{
 //        implements DownloadFragment.OnFragmentInteractionListener
     private MainFragmentPagerAdapter pagerAdapter;
 
@@ -82,7 +84,7 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     }
 
     @Override
-    /*菜单栏点击响应*/
+    /**菜单栏点击响应**/
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.add_Item:
@@ -94,7 +96,7 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     }
 
     @Override
-    /*处理按返回键后重新进入会有启动界面的情况*/
+    /**处理按返回键后重新进入会有启动界面的情况**/
     public void onBackPressed() {
         // super.onBackPressed(); 	不要调用父类的方法
         Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -148,10 +150,19 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     //实现接口DownloadFinishInterface
     @Override
     public void onDownloadFinish(DownloadTask task) {
-        finishFragment.setTask(task);
+        this.finishFragment.setTask(task);
     }
 
     @Override
-    public void onDownloadDelete(String filename){downloadFragment.del_DownloadTaskByfilename(filename);}
+    public void onDownloadDelete(String filename){
+        this.downloadFragment = pagerAdapter.downloadFragment;
+        downloadFragment.del_DownloadTaskByfilename(filename);}
+
+    @Override
+    public void onDownloadInit(DownloadTask task) {
+        this.finishFragment = pagerAdapter.finishFragment;
+        //Log.i("onDownloadFinish",task.getFilename());
+        this.finishFragment.getTask(task);
+    }
 
 }

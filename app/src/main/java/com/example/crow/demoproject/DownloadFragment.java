@@ -93,11 +93,34 @@ public class DownloadFragment extends Fragment {
         } catch (Exception e) {
             throw new ClassCastException(getActivity().toString() + "must implement onDownloadFinish");
         }
+
+        try {
+            mDowInitInterface = (DownloadInitInterface)getActivity();
+        } catch (Exception e) {
+            throw new ClassCastException(getActivity().toString() + "must implement onDownloadInit");
+        }
     }
 
+
+    private DownloadInitInterface mDowInitInterface;
+    public interface DownloadInitInterface{
+        public void onDownloadInit(DownloadTask task);
+    }
     @Override
     public void onStart() {
         super.onStart();
+        ArrayList<DownloadTask> taskList = downloadManager.initTaskList();
+        for (int i = 0; i < taskList.size(); i++) {
+            //加载数据库 未完成任务显示
+            if(taskList.get(i).getisFinish()==false)
+                show(taskList.get(i));
+            else{
+                //已完成任务
+                //Log.i("onStart",taskList.get(i).getFilename());
+                /**to be finished**/
+                mDowInitInterface.onDownloadInit(taskList.get(i));
+            }
+        }
     }
 
     private LinearLayout baseLayout;
@@ -108,7 +131,21 @@ public class DownloadFragment extends Fragment {
         baseLayout = (LinearLayout)view.findViewById(R.id.baseList);
         return view;
     }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+    }
+
+    @Override
+    public void onStop(){
+        //保存未完成任务到数据库
+        downloadManager.storeTaskList();
+        super.onStop();
+    }
+
     /**新增下载任务**/
+    //默认不开始下载任务
     public void add_DownloadTask(Editable urlpath){
         File saveDir;
         if(Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)){
@@ -123,12 +160,10 @@ public class DownloadFragment extends Fragment {
             return;
         }
         Toast.makeText(mContext, "下载地址："+urlpath ,Toast.LENGTH_SHORT).show();
+        downloadManager.setSaveDir(saveDir);//默认统一本地地址
         show(task);
-        //downloadManager.startDownloadTask(task);
-        /**test**/
-        fin_DownloadTask(task.getId_List());
     }
-    /**删除下载任务**/
+    /**直接删除下载任务**/
     public void del_DownloadTask(int taskID){
         String filename;
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
@@ -152,26 +187,26 @@ public class DownloadFragment extends Fragment {
         baseList.removeView(taskLayout);
         id.removeID(taskID);
     }
-    /****/
+    /**Finish fragment删除已完成任务接口引起调用**/
     public void del_DownloadTaskByfilename(String filename){
         downloadManager.delDownloadTask(filename);
     }
 
-
+    /**启动下载任务**/
     public void res_DownloadTask(int taskID){
         Button btn = (Button)view.findViewById(taskID*ID_offset+UI_offset.BEG_PAUSE_BTN);
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
         String filename = temp.getText().toString();
         downloadManager.resDownloadTask(filename);
-        btn.setText(RESUME_SIGN);
+        btn.setText(PAUSE_SIGN);
     }
-
+    /**暂停下载任务**/
     public void pau_DownloadTask(int taskID){
         Button btn = (Button)view.findViewById(taskID*ID_offset+UI_offset.BEG_PAUSE_BTN);
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
         String filename = temp.getText().toString();
         downloadManager.pauDownloadTask(filename);
-        btn.setText(PAUSE_SIGN);
+        btn.setText(RESUME_SIGN);
     }
 
     /**下载完成：从下载中页面移除，加入完成页面**/
@@ -185,6 +220,7 @@ public class DownloadFragment extends Fragment {
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
         filename = temp.getText().toString();
         DownloadTask task = downloadManager.getTaskbyFilename(filename);
+        task.setisFinish(true);
         //调用接口
         mDowFinInterface.onDownloadFinish(task);
         rem_DownloadTask(taskID);
@@ -275,7 +311,8 @@ public class DownloadFragment extends Fragment {
         btnAddParam.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         //btnAddParam.addRule(RelativeLayout.RIGHT_OF, filename_text.getId());
         final Button beg_pau_btn = new Button(mContext);
-        beg_pau_btn.setText(PAUSE_SIGN);
+        //默认开始按钮
+        beg_pau_btn.setText(RESUME_SIGN);
         beg_pau_btn.setLayoutParams(btnAddParam);
         //开始暂停按钮ID
         beg_pau_btn.setId(idbase*ID_offset+UI_offset.BEG_PAUSE_BTN);
@@ -302,10 +339,12 @@ public class DownloadFragment extends Fragment {
                 String sign = beg_pau_btn.getText().toString();
                 int taskID = (beg_pau_btn.getId()-UI_offset.BEG_PAUSE_BTN)/ID_offset;
                 if(sign.equals(PAUSE_SIGN)) {
-                    res_DownloadTask(taskID);
+                    pau_DownloadTask(taskID);
                 }
                 else {
-                    pau_DownloadTask(taskID);
+                    //res_DownloadTask(taskID);
+                    /**test**/
+                    fin_DownloadTask(taskID);
                 }
             }
         });

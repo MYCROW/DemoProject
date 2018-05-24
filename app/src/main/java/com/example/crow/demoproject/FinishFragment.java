@@ -72,11 +72,18 @@ public class FinishFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_finish, container, false);
         this.view = view;
         finishList = (LinearLayout)view.findViewById(R.id.finishList);
+        if(taskList.size() != 0){
+            for(int i =0;i<taskList.size();i++)
+                setTask(taskList.get(i));
+        }
         return view;
     }
 
+    public void getTask(DownloadTask task){
+        taskList.add(task);
+    }
+
     public void setTask(DownloadTask task){
-        Log.i(TAG,task.getFilename()+" finished");
         show(task);
     }
 
@@ -130,6 +137,7 @@ public class FinishFragment extends Fragment {
 
 
     public void show(DownloadTask task){
+        Log.i("show",task.getFilename());
         final int idbase = id.getID();
         task.setId_Fini(idbase);
         final String filename = task.getFilename();

@@ -238,7 +238,7 @@ public class FileDownloadered {
 
             fileService.delete(this.downloadUrl,this.filename);
             //如果存在下载记录，删除它们，然后重新添加
-            fileService.setLength_Thread(this.downloadUrl,this.filename, this.data);
+            fileService.setLength_Thread(this.downloadUrl,this.filename, this.data,"0");
             //把下载的实时数据写入数据库中
             boolean notFinish = true;
             //下载未完成

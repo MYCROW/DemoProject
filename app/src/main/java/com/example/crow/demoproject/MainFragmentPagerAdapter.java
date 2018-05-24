@@ -22,17 +22,20 @@ public class MainFragmentPagerAdapter extends FragmentPagerAdapter {
         this.context = context;
         getDownloadFragment = false;
         getFinishFragment = false;
+
+        downloadFragment = DownloadFragment.newInstance(0);
+        finishFragment = FinishFragment.newInstance(1);
     }
 
     @Override
     public Fragment getItem(int position) {
         if(position == 0) {
-            downloadFragment = DownloadFragment.newInstance(position);
+            //downloadFragment = DownloadFragment.newInstance(position);
             getDownloadFragment = true;
             return downloadFragment;
         }
         else {
-            finishFragment = FinishFragment.newInstance(position);
+            //finishFragment = FinishFragment.newInstance(position);
             getFinishFragment = true;
             return finishFragment;
         }

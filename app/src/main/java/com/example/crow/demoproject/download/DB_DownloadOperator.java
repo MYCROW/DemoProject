@@ -1,5 +1,6 @@
 package com.example.crow.demoproject.download;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import android.content.Context;
@@ -16,12 +17,50 @@ public class DB_DownloadOperator {
 
     public DB_DownloadOperator(Context context){
         db_downloadTable = new DB_DownloadTable(context);
-//        Log.i(TAG,"downloadOp");
+//        SQLiteDatabase db = db_downloadTable.getReadableDatabase();
+//        db.execSQL("DROP TABLE "+TABLE_NAME);
+//        db.close();
     }
 
+    /**获得未完成文件的文件名和下载路径**/
+    public Map<String,String> getAllFilename_unfinish(){
+        SQLiteDatabase db = db_downloadTable.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select "+VALUE_NAME+  ", "+
+                        VALUE_PATH + " from "+
+                        TABLE_NAME + " where "  +
+                        VALUE_ISFINISH + " = ? ",
+                new String[]{"0"});
+        Map<String,String> data = new HashMap<String,String>();
+        cursor.moveToFirst();
+        while(cursor.moveToNext()){
+            data.put(cursor.getString(0), cursor.getString(1));
+            data.put(cursor.getString(cursor.getColumnIndexOrThrow(VALUE_NAME)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(VALUE_PATH)));
+        }
+        return data;
+    }
+
+    public Map<String,String> getAllFilename_finish(){
+        SQLiteDatabase db = db_downloadTable.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select "+VALUE_NAME+  ", "+
+                        VALUE_PATH + " from "+
+                        TABLE_NAME + " where "  +
+                        VALUE_ISFINISH + " = ? ",
+                new String[]{"1"});
+        Map<String,String> data = new HashMap<String,String>();
+        cursor.moveToFirst();
+        while(cursor.moveToNext()){
+            data.put(cursor.getString(0), cursor.getString(1));
+            data.put(cursor.getString(cursor.getColumnIndexOrThrow(VALUE_NAME)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(VALUE_PATH)));
+        }
+        return data;
+    }
+
+
+    /**获得指定任务的每条线程已经下载的文件长度**/
     //filename 唯一，其实只要传进filename就能表示表里对应项？
     //Map<thread_id,downlength>
-    /**获得指定任务的每条线程已经下载的文件长度**/
     public Map<Integer,Integer> getLength_Thread(String path,String filename){
         SQLiteDatabase db = db_downloadTable.getReadableDatabase();
         Cursor cursor = db.rawQuery("select "+VALUE_THREADID+ ", "+
@@ -45,7 +84,7 @@ public class DB_DownloadOperator {
     }
 
     /**保存指定任务的每条线程已下载的文件长度**/
-    public void setLength_Thread(String path,String filename, Map<Integer,Integer> map){
+    public void setLength_Thread(String path,String filename, Map<Integer,Integer> map,String isfinish){
         SQLiteDatabase db = db_downloadTable.getWritableDatabase();
         db.beginTransaction();
         try{
@@ -54,8 +93,8 @@ public class DB_DownloadOperator {
             {
                 //插入特定文件名特定下载路径特定线程ID已经下载的数据
                 db.execSQL("insert into "+TABLE_NAME+"("+VALUE_NAME+", "+VALUE_PATH+", "+
-                                VALUE_THREADID+", "+VALUE_LENGTH+ ") values(?,?,?,?)",
-                        new Object[]{filename, path, entry.getKey(), entry.getValue()});
+                                VALUE_THREADID+", "+VALUE_LENGTH+ ","+VALUE_ISFINISH+") values(?,?,?,?,?)",
+                        new Object[]{filename, path, entry.getKey(), entry.getValue(),isfinish});
             }
             //设置一个事务成功的标志,如果成功就提交事务,如果没调用该方法的话那么事务回滚
             //就是上面的数据库操作撤销

@@ -22,6 +22,7 @@ public class DownloadTask implements Runnable{
     private int threadnum;
     private Context mContext;
     private int filesize = 0;
+    private boolean isFinish = false;
 
     //进度条更新
     private Handler handler;
@@ -44,6 +45,7 @@ public class DownloadTask implements Runnable{
 
     public void setProgressbar(ProgressBar progressbar){this.progressbar = progressbar;}
 
+    public void setisFinish(boolean isFinish){this.isFinish = isFinish;}
 
     public int getId_List(){return id_List;}
 
@@ -56,6 +58,8 @@ public class DownloadTask implements Runnable{
     public String getDownloadUrl(){return downloadUrl;}
 
     public int getFilesize(){return filesize;}
+
+    public boolean getisFinish(){return isFinish;}
 
     public void run() {
         try {

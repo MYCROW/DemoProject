@@ -19,9 +19,9 @@ public class DB_DownloadOperator {
 //        Log.i(TAG,"downloadOp");
     }
 
-    /**filename 唯一，其实只要传进filename就能表示表里对应项？**/
-    /**Map<thread_id,downlength>**/
-    //获得指定任务的每条线程已经下载的文件长度
+    //filename 唯一，其实只要传进filename就能表示表里对应项？
+    //Map<thread_id,downlength>
+    /**获得指定任务的每条线程已经下载的文件长度**/
     public Map<Integer,Integer> getLength_Thread(String path,String filename){
         SQLiteDatabase db = db_downloadTable.getReadableDatabase();
         Cursor cursor = db.rawQuery("select "+VALUE_THREADID+ ", "+
@@ -44,7 +44,7 @@ public class DB_DownloadOperator {
         return data;
     }
 
-    //保存指定任务的每条线程已下载的文件长度
+    /**保存指定任务的每条线程已下载的文件长度**/
     public void setLength_Thread(String path,String filename, Map<Integer,Integer> map){
         SQLiteDatabase db = db_downloadTable.getWritableDatabase();
         db.beginTransaction();
@@ -67,7 +67,7 @@ public class DB_DownloadOperator {
         db.close();
     }
 
-    //实时更新指定任务的某条线程已经下载的文件长度
+    /**实时更新指定任务的某条线程已经下载的文件长度**/
     public void updateLength_Thread(String path,String filename,int threadId,int pos)
     {
         SQLiteDatabase db = db_downloadTable.getWritableDatabase();
@@ -78,7 +78,7 @@ public class DB_DownloadOperator {
         db.close();
     }
 
-    //删除下载记录
+    /**删除下载记录**/
     public void delete(String path,String filename)
     {
         SQLiteDatabase db = db_downloadTable.getWritableDatabase();

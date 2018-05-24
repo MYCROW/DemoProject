@@ -21,6 +21,7 @@ public class DownloadTask implements Runnable{
     private FileDownloadered loader;
     private int threadnum;
     private Context mContext;
+    private int filesize = 0;
 
     //进度条更新
     private Handler handler;
@@ -53,6 +54,8 @@ public class DownloadTask implements Runnable{
     public File getSavefile(){return saveFile;}
 
     public String getDownloadUrl(){return downloadUrl;}
+
+    public int getFilesize(){return filesize;}
 
     public void run() {
         try {

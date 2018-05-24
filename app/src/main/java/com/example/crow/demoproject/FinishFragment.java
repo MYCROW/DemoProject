@@ -178,12 +178,29 @@ public class FinishFragment extends Fragment {
         //删除按钮ID
         del_btn.setId(idbase*ID_offset+ UI_offset.DEL_BTN);
 
-
+        final String savefile = task.getSavefile().toString();
+        final int filesize = task.getFilesize();
         //查看信息按钮事件
         beg_pau_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+                builder.setTitle("下载任务信息");
+                TextView vv = new TextView(mContext);
+                vv.setText("文件名："+filename+"\n"
+                        +"文件路径："+savefile+"\n"
+                        +"文件大小："+filesize);
+                builder.setView(vv);
+                builder.setPositiveButton("确定", new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        Toast.makeText(mContext, "完成查看" , Toast.LENGTH_SHORT).show();
+                    }
+                });
+                final android.app.AlertDialog alert = builder.create();
+                alert.show();
             }
         });
         //删除按钮事件

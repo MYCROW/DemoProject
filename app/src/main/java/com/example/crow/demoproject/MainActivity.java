@@ -30,7 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 
-public class MainActivity extends FragmentActivity implements DownloadFragment.DownloadFinishInterface{
+public class MainActivity extends FragmentActivity implements DownloadFragment.DownloadFinishInterface,FinishFragment.DownloadDeleteInterface{
 //        implements DownloadFragment.OnFragmentInteractionListener
     private MainFragmentPagerAdapter pagerAdapter;
 
@@ -150,5 +150,8 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     public void onDownloadFinish(DownloadTask task) {
         finishFragment.setTask(task);
     }
+
+    @Override
+    public void onDownloadDelete(String filename){downloadFragment.del_DownloadTaskByfilename(filename);}
 
 }

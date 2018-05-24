@@ -140,6 +140,24 @@ public class DownloadFragment extends Fragment {
         id.removeID(taskID);
     }
 
+    /**把下载任务移动到已完成列表**/
+    //不在下载管理器中移除
+    public void rem_DownloadTask(int taskID){
+        String filename;
+        TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
+        filename = temp.getText().toString();
+        //downloadManager.delDownloadTask(filename);
+        LinearLayout baseList = (LinearLayout)view.findViewById(R.id.baseList);
+        LinearLayout taskLayout = (LinearLayout)view.findViewById(taskID*ID_offset+UI_offset.TASK_ID);
+        baseList.removeView(taskLayout);
+        id.removeID(taskID);
+    }
+    /****/
+    public void del_DownloadTaskByfilename(String filename){
+        downloadManager.delDownloadTask(filename);
+    }
+
+
     public void res_DownloadTask(int taskID){
         Button btn = (Button)view.findViewById(taskID*ID_offset+UI_offset.BEG_PAUSE_BTN);
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
@@ -169,7 +187,7 @@ public class DownloadFragment extends Fragment {
         DownloadTask task = downloadManager.getTaskbyFilename(filename);
         //调用接口
         mDowFinInterface.onDownloadFinish(task);
-        del_DownloadTask(taskID);
+        rem_DownloadTask(taskID);
     }
 
     //ID regular
@@ -214,9 +232,8 @@ public class DownloadFragment extends Fragment {
     private ID id;
 
     private void show(DownloadTask task){
-        //int taskNum = downloadManager.getTaskNum();
         int idbase = id.getID();
-        //final String filename = "test"+(idbase)+".rar";
+        task.setId_List(idbase);
         final String filename = task.getFilename();
         // 显示DownloadTask的控件并添加到自定义布局中
         //1.最外层LinearLayout
@@ -327,7 +344,6 @@ public class DownloadFragment extends Fragment {
 
         baseLayout.addView(taskLayout,-1);
 
-        task.setId_List(idbase);
         task.setHandler(handler);
         task.setProgressbar(taskProgress);
     }

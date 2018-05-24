@@ -37,6 +37,7 @@ import static android.content.ContentValues.TAG;
 public class FinishFragment extends Fragment {
     public static final String ARG_PAGE = "ARG_PAGE";
     private int mPage;
+    View view;
     private Context mContext;
     private ArrayList<DownloadTask>  taskList;
 
@@ -55,6 +56,13 @@ public class FinishFragment extends Fragment {
         mContext = getActivity();
         id = new ID();
         taskList = new ArrayList<>();
+
+        //强制实现接口
+        try {
+            mDowFinInterface = (DownloadDeleteInterface)getActivity();
+        } catch (Exception e) {
+            throw new ClassCastException(getActivity().toString() + "must implement onDownloadDelete");
+        }
     }
 
     private LinearLayout finishList;
@@ -62,6 +70,7 @@ public class FinishFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_finish, container, false);
+        this.view = view;
         finishList = (LinearLayout)view.findViewById(R.id.finishList);
         return view;
     }
@@ -72,14 +81,12 @@ public class FinishFragment extends Fragment {
     }
 
     public void del_Task(int task_ID){
-
+        LinearLayout taskLayout = (LinearLayout)view.findViewById(task_ID*ID_offset+UI_offset.TASK_ID);
+        finishList.removeView(taskLayout);
+        id.removeID(task_ID);
     }
 
     public void check_Task(int task_ID){
-
-    }
-
-    public void reDown_Task(int task_ID){
 
     }
 
@@ -121,8 +128,10 @@ public class FinishFragment extends Fragment {
     public final String CHECK_SIGN = "查看细节";
     public final String DELETE_SIGN = "删除记录";
 
+
     public void show(DownloadTask task){
-        int idbase = id.getID();
+        final int idbase = id.getID();
+        task.setId_Fini(idbase);
         final String filename = task.getFilename();
         // 显示DownloadTask的控件并添加到自定义布局中
         //1.最外层LinearLayout
@@ -207,7 +216,10 @@ public class FinishFragment extends Fragment {
         del_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                //移除视图
+                del_Task(idbase);
+                //调用接口
+                mDowFinInterface.onDownloadDelete(filename);
             }
         });
 
@@ -217,9 +229,12 @@ public class FinishFragment extends Fragment {
         taskLayout.addView(controlLayout,0);
 
         finishList.addView(taskLayout,-1);
-        task.setId_Fini(idbase);
 
     }
-
-
+    //传递信息的接口
+    private DownloadDeleteInterface mDowFinInterface;
+    public interface DownloadDeleteInterface{
+        public void onDownloadDelete(String filename);
+    }
 }
+

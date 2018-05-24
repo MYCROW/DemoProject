@@ -96,6 +96,7 @@ public class DownloadManager {
             task.exit();
         //to be finished
         taskList.remove(task.getId_List());
+        Log.i("DownloadManager","数据库中删除");
     }
 
     public void resDownloadTask(String filename){

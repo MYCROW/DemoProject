@@ -14,28 +14,39 @@ import java.util.regex.Pattern;
 import android.content.Context;
 import android.util.Log;
 
+import com.example.crow.demoproject.Thread.DownloadThread;
+
 
 public class FileDownloadered {
+    public static final int THREADID_START = 1;
+
+
     private static final String TAG = "文件下载类";  //设置一个查log时的一个标志
     private static final int RESPONSEOK = 200;    //设置响应码为200,代表访问成功
     private DB_DownloadOperator fileService;        //获取本地数据库的业务Bean
+
     private boolean exited;             //停止下载的标志
+    private boolean single;             //单线程下载标志
+    private boolean finish;             //下载完成标志
+
     private Context context;            //程序的上下文对象
-    private int downloadedSize = 0;               //已下载的文件长度
+    private int downloadedSize = 0;     //已下载的文件长度
     private int fileSize = 0;           //开始的文件长度
+
     private DownloadThread[] threads;        //根据线程数设置下载的线程池
     private File saveFile;              //数据保存到本地的文件中
     private Map<Integer, Integer> data = new ConcurrentHashMap<Integer, Integer>();  //缓存个条线程的下载的长度
-    private int block;                            //每条线程下载的长度
-    private String downloadUrl;                   //下载的路径
-    private String filename;
+    private int block;                   //每条线程下载的长度
+    private String downloadUrl;          //下载的路径
+    private String filename;             //下载的文件名
+    private String ac_filename;          //服务器提供的文件名
 
     /**
      * 获取线程数
      */
     public int getThreadSize()
     {
-        return threads.length;
+        return single?1:threads.length;
     }
 
     /**
@@ -57,13 +68,18 @@ public class FileDownloadered {
     {
         return fileSize;
     }
-//
+
+    /**
+     * 获取下载完成标志
+     * */
+    public boolean getFinsih(){return finish;}
+
     //DownloadThread中调用
     /**
      * 累计已下载的大小
      * 使用同步锁来解决并发的访问问题
      * */
-    protected synchronized void append(int size)
+    public synchronized void append(int size)
     {
         //把实时下载的长度加入到总的下载长度中
         downloadedSize += size;
@@ -74,7 +90,7 @@ public class FileDownloadered {
      * @param threadId 线程id
      * @param pos 最后下载的位置
      * */
-    protected synchronized void update(int threadId,int pos)
+    public synchronized void update(int threadId,int pos)
     {
         //把指定线程id的线程赋予最新的下载长度,以前的值会被覆盖掉
         this.data.put(threadId, pos);
@@ -85,6 +101,8 @@ public class FileDownloadered {
 
     /**
      * 构建文件下载器
+     * @param context 应用上下文环境
+     * @param filename 应用给定的文件名？
      * @param downloadUrl 下载路径
      * @param fileSaveDir 文件的保存目录
      * @param threadNum  下载线程数
@@ -95,42 +113,41 @@ public class FileDownloadered {
         try {
             this.context = context;     //获取上下文对象,赋值
             this.downloadUrl = downloadUrl;  //为下载路径赋值
-            this.filename = filename;
+            this.filename = filename;   //应用给定文件名赋值
+            this.finish = false;
             fileService = new DB_DownloadOperator(this.context);   //实例化数据库操作的业务Bean类,需要传一个context值
             URL url = new URL(this.downloadUrl);     //根据下载路径实例化URL
             if(!fileSaveDir.exists()) fileSaveDir.mkdir();  //如果文件不存在的话指定目录,这里可创建多层目录
-            this.threads = new DownloadThread[threadNum];   //根据下载的线程数量创建下载的线程池
-
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();   //创建远程连接句柄,这里并未真正连接
             conn.setConnectTimeout(5000);      //设置连接超时事件为5秒
             conn.setRequestMethod("GET");      //设置请求方式为GET
-            //设置用户端可以接收的媒体类型
-            conn.setRequestProperty("Accept", "image/gif, image/jpeg, image/pjpeg, " +
+            conn.setRequestProperty("Accept", "image/gif, image/jpeg, image/pjpeg, " + //设置用户端可以接收的媒体类型
                     "image/pjpeg, application/x-shockwave-flash, application/xaml+xml, " +
                     "application/vnd.ms-xpsdocument, application/x-ms-xbap," +
                     " application/x-ms-application, application/vnd.ms-excel," +
                     " application/vnd.ms-powerpoint, application/msword, */*");
-
             conn.setRequestProperty("Accept-Encoding", "identity");
-
             conn.setRequestProperty("Accept-Language", "zh-CN");  //设置用户语言
             conn.setRequestProperty("Referer", downloadUrl);    //设置请求的来源页面,便于服务端进行来源统计
             conn.setRequestProperty("Charset", "UTF-8");    //设置客户端编码
-            //设置用户代理
-            conn.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0; " +
+            conn.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0; " + //设置用户代理
                     "Windows NT 5.2; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727;" +
                     " .NET CLR 3.0.04506.30; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)");
-
             conn.setRequestProperty("Connection", "Keep-Alive");  //设置connection的方式
+
             conn.connect();      //和远程资源建立正在的链接,但尚无返回的数据流
-            printResponseHeader(conn);   //打印返回的Http的头字段集合
-            //对返回的状态码进行判断,用于检查是否请求成功,返回200时执行下面的代码
-            if(conn.getResponseCode() == RESPONSEOK) {
+            //printResponseHeader(conn);   //打印返回的Http的头字段集合
+            if(conn.getResponseCode() == RESPONSEOK) {//对返回的状态码进行判断,用于检查是否请求成功,返回200时执行下面的代码
                 this.fileSize = conn.getContentLength();  //根据响应获得文件大小
-                if(this.fileSize <= 0)throw new RuntimeException("不知道文件大小");  //文件长度小于等于0时抛出运行时异常
-                String act_filename = getFileName(conn);      //获取文件名称
-                /**使用自定义的文件名而不是连接得到的文件名**/
+                this.single = false;
+                if(this.fileSize <= 0 || threadNum == 1) {//无法获得文件大小或者线程数为1 都设置为单线程下载
+                    this.single = true;
+                    threadNum = 1;
+                }
+                this.threads = new DownloadThread[threadNum];   //根据下载的线程数量创建下载的线程池
+                /**使用自定义的文件名而不是连接得到的文件名 ?**/
+                this.ac_filename = getFileName(conn);    //获取文件名称
                 this.saveFile = new File(fileSaveDir,filename);  //根据文件保存目录和文件名保存文件
                 Map<Integer,Integer> logdata = fileService.getLength_Thread(downloadUrl,filename);    //获取下载记录
                 //如果存在下载记录
@@ -148,33 +165,33 @@ public class FileDownloadered {
                     //遍历每条线程已下载的数据
                     for(int i = 0;i < this.threads.length;i++)
                     {
-                        this.downloadedSize += this.data.get(i+1);
+                        this.downloadedSize += this.data.get(i+THREADID_START);
                     }
-                    print("已下载的长度" + this.downloadedSize + "个字节");
                 }
-                //使用条件运算符求出每个线程需要下载的数据长度
-                this.block = (this.fileSize % this.threads.length) == 0?
-                        this.fileSize / this.threads.length:
-                        this.fileSize / this.threads.length + 1;
-            }else{
-                //打印错误信息
-                print("服务器响应错误:" + conn.getResponseCode() + conn.getResponseMessage());
+                //使用条件运算符求出每个线程需要下载的数据长度（能得到文件大小的情况）
+                if(this.fileSize > 0 && !this.single) {
+                    this.block = (this.fileSize % this.threads.length) == 0 ?
+                            this.fileSize / this.threads.length :
+                            this.fileSize / this.threads.length + 1;
+                }
+                else//单线程情况下 可能为-1
+                    this.block = this.fileSize;
+            }else{//请求失败 conn.getResponseCode() ！= RESPONSEOK
+                print("服务器响应错误:" + conn.getResponseCode() + conn.getResponseMessage());//打印错误信息
                 throw new RuntimeException("服务器反馈出错");
             }
-
-
         }catch (Exception e)
         {
             print(e.toString());   //打印错误
             throw new RuntimeException("无法连接URL");
         }
     }
-//
-//
-//    /**
-//     * 获取文件名
-//     * */
-    private String getFileName(HttpURLConnection conn)
+
+
+    /**
+     * 通过服务器响应获取文件名
+     * */
+    public String getFileName(HttpURLConnection conn)
     {
         //从下载的路径的字符串中获取文件的名称
         String filename = this.downloadUrl.substring(this.downloadUrl.lastIndexOf('/') + 1);
@@ -198,81 +215,84 @@ public class FileDownloadered {
 //
     /**
      *  开始下载文件
-     * @param listener 监听下载数量的变化,如果不需要了解实时下载的数量,可以设置为null
+     * @param listener 监听下载数量的变化以及退出命令,如果不需要了解实时下载的数量,可以设置为null
      * @return 已下载文件大小
      * @throws Exception
      */
     //进行下载,如果有异常的话,抛出异常给调用者
     public int download(DownloadProgressListener listener) throws Exception{
         try {
-            RandomAccessFile randOut = new RandomAccessFile(this.saveFile, "rwd");
-            //设置文件大小
-            if(this.fileSize>0) randOut.setLength(this.fileSize);
-            randOut.close();    //关闭该文件,使设置生效
             URL url = new URL(this.downloadUrl);
-            if(this.data.size() != this.threads.length){
+            if (this.data.size() != this.threads.length) {
                 //如果原先未曾下载或者原先的下载线程数与现在的线程数不一致
                 this.data.clear();
                 //遍历线程池
                 for (int i = 0; i < this.threads.length; i++) {
-                    this.data.put(i+1, 0);//初始化每条线程已经下载的数据长度为0
+                    this.data.put(i + THREADID_START, 0);//初始化每条线程已经下载的数据长度为0
                 }
                 this.downloadedSize = 0;   //设置已经下载的长度为0
             }
-
-            for (int i = 0; i < this.threads.length; i++) {//开启线程进行下载
-                int downLength = this.data.get(i+1);
-                //通过特定的线程id获取该线程已经下载的数据长度
-                //判断线程是否已经完成下载,否则继续下载
-                if(downLength < this.block && this.downloadedSize<this.fileSize){
-                    //初始化特定id的线程
-                    this.threads[i] = new DownloadThread(this, url, this.saveFile, this.block, this.data.get(i+1), i+1);
-                    //设置线程优先级,Thread.NORM_PRIORITY = 5;
-                    //Thread.MIN_PRIORITY = 1;Thread.MAX_PRIORITY = 10,数值越大优先级越高
-                    this.threads[i].setPriority(7);
-                    this.threads[i].start();    //启动线程
-                }else{
-                    this.threads[i] = null;   //表明线程已完成下载任务
+            if (!single){//多线程下载
+                for (int i = 0; i < this.threads.length; i++) {//开启线程进行下载
+                    int downLength = this.data.get(i + THREADID_START);
+                    //通过特定的线程id获取该线程已经下载的数据长度
+                    //判断线程是否已经完成下载,否则继续下载
+                    if (downLength < this.block && this.downloadedSize < this.fileSize) {
+                        //初始化特定id的线程
+                        this.threads[i] = new DownloadThread(this, url, this.saveFile, this.block, downLength, i + THREADID_START);
+                        //设置线程优先级,Thread.NORM_PRIORITY = 5;
+                        //Thread.MIN_PRIORITY = 1;Thread.MAX_PRIORITY = 10,数值越大优先级越高
+                        this.threads[i].setPriority(7);
+                        this.threads[i].start();    //启动线程
+                    } else {
+                        this.threads[i] = null;   //表明线程已完成下载任务
+                    }
                 }
             }
-
+            else{//单线程下载 必定重新下载
+                int downLength = 0;
+                this.threads[0] = new DownloadThread(this, url, this.saveFile, this.block, downLength, 0 + THREADID_START);
+                this.threads[0].setPriority(7);
+                this.threads[0].start();
+            }
+            //如果存在下载记录，删除它们，然后重新添加  使得数据的记录能和线程对应
             fileService.delete(this.downloadUrl,this.filename);
-            //如果存在下载记录，删除它们，然后重新添加
             fileService.setLength_Thread(this.downloadUrl,this.filename, this.data,"0");
-            //把下载的实时数据写入数据库中
-            boolean notFinish = true;
-            //下载未完成
-            while (notFinish) {
-                // 循环判断所有线程是否完成下载
-                Thread.sleep(900);
-                notFinish = false;
-                //假定全部线程下载完成
-                for (int i = 0; i < this.threads.length; i++){
+            this.finish =false;
+            //每隔一定时间检查线程状态+是否需要退出下载
+            while (!finish) {
+                Thread.sleep(1000);
+                this.finish =true;//先假定全部线程下载完成
+                for (int i = 0; i < this.threads.length; i++){// 循环判断所有线程是否完成下载
                     if (this.threads[i] != null && !this.threads[i].isFinish()) {
                         //如果发现线程未完成下载
-                        notFinish = true;
-                        //设置标志为下载没有完成
+                        // 设置标志为下载没有完成
+                        this.finish = false;
+                        if(getExited())break;
                         if(this.threads[i].getDownLength() == -1){
                             //如果下载失败,再重新在已下载的数据长度的基础上下载
                             //重新开辟下载线程,设置线程的优先级
-                            this.threads[i] = new DownloadThread(this, url, this.saveFile, this.block, this.data.get(i+1), i+1);
+                            this.threads[i] = new DownloadThread(this, url, this.saveFile, this.block, this.data.get(i+THREADID_START), i+THREADID_START);
                             this.threads[i].setPriority(7);
                             this.threads[i].start();
                         }
                     }
                 }
-                if(listener!=null) listener.onDownloadSize(this.downloadedSize);
-                //通知目前已经下载完成的数据长度
+                if(listener!=null)
+                    listener.onDownloadSize(this.downloadedSize);//通知目前已经下载完成的数据长度，在DownloadThread内更新了downloadedSize
+                if(getExited())
+                    break;
             }
-            if(downloadedSize == this.fileSize) fileService.delete(this.downloadUrl,this.filename);
-            //下载完成删除记录
+            if(this.finish) //下载完成不删除记录？设置为已完成
+                fileService.updateFinish(this.downloadUrl,this.filename,1+"");
+            else
+                fileService.updateFinish(this.downloadUrl,this.filename,0+"");
         } catch (Exception e) {
             print(e.toString());
             throw new Exception("文件下载异常");
         }
         return this.downloadedSize;
     }
-
 
     /**
      * 获取Http响应头字段
@@ -309,7 +329,7 @@ public class FileDownloadered {
      * 打印信息
      * @param msg 信息字符串
      * */
-    private static void print(String msg) {
+    public static void print(String msg) {
         Log.i(TAG, msg);
     }
 }

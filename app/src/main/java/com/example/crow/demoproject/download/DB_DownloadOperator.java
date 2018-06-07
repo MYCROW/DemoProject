@@ -106,6 +106,16 @@ public class DB_DownloadOperator {
         db.close();
     }
 
+
+    public void updateFinish(String path,String filename,String isfinish){
+        SQLiteDatabase db = db_downloadTable.getWritableDatabase();
+        //更新特定下载路径下特定线程已下载的文件长度
+        db.execSQL("update "+TABLE_NAME+" set "+VALUE_ISFINISH+"=? where "+VALUE_PATH+
+                        "=? and "+VALUE_NAME+"=?",
+                new Object[]{isfinish, path, filename});
+        db.close();
+    }
+
     /**实时更新指定任务的某条线程已经下载的文件长度**/
     public void updateLength_Thread(String path,String filename,int threadId,int pos)
     {

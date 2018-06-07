@@ -49,20 +49,29 @@ public class DownloadFragment extends Fragment {
     /**监听进度条**/
     private Handler handler = new UIHander();
     private final class UIHander extends Handler{
+        private int count = 0;
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 //下载时
                 case PROCESSING:
                     int id = msg.getData().getInt("id");
                     int size = msg.getData().getInt("size");     //从消息中获取已经下载的数据长度
-                    ProgressBar progressbar = view.findViewById(id*ID_offset+UI_offset.PRO_BAR);
-                    progressbar.setProgress(size);         //设置进度条的进度
-                    if(progressbar.getProgress() == progressbar.getMax()){ //下载完成时提示
+                    int hasFinish = msg.getData().getInt("hasfinish");
+                    int hasFileSize = msg.getData().getInt("hasFileSize");
+                    ProgressBar progressbar = view.findViewById(id * ID_offset + UI_offset.PRO_BAR);
+                    if (hasFileSize == 1){//能获得文件大小
+                        progressbar.setProgress(size);//设置进度条的进度
+                    }
+                    else{
+                        if(count++ == 0)
+                            Toast.makeText(mContext, "文件大小未知，无法更新进度", Toast.LENGTH_SHORT).show();
+                        progressbar.setProgress(0);
+                    }
+                    if (hasFinish == 1) { //下载完成时提示
                         Toast.makeText(mContext, "文件下载成功", Toast.LENGTH_SHORT).show();
                         fin_DownloadTask(id);
                     }
                     break;
-
                 case FAILURE:    //下载失败时提示
                     Toast.makeText(mContext, "文件下载失败", Toast.LENGTH_SHORT).show();
                     break;
@@ -109,15 +118,17 @@ public class DownloadFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        ArrayList<DownloadTask> taskList = downloadManager.initTaskList();
+        ArrayList<DownloadTask> taskList = downloadManager.initTaskList();//应该放在新线程中？
         for (int i = 0; i < taskList.size(); i++) {
             //加载数据库 未完成任务显示
-            if(taskList.get(i).getisFinish()==false)
+            if(taskList.get(i).getisFinish()==false) {
+                //清除原有视图
+                baseLayout.removeAllViews();
+                id.clear();
                 show(taskList.get(i));
+            }
             else{
-                //已完成任务
-                //Log.i("onStart",taskList.get(i).getFilename());
-                /**to be finished**/
+                //已完成任务让finish fragment显示
                 mDowInitInterface.onDownloadInit(taskList.get(i));
             }
         }
@@ -134,14 +145,21 @@ public class DownloadFragment extends Fragment {
 
     @Override
     public void onResume(){
+        //恢复状态显示为正在下载的下载任务
         super.onResume();
     }
 
     @Override
     public void onStop(){
         //保存未完成任务到数据库
+        //应该记录下载任务的下载状态
         downloadManager.storeTaskList();
         super.onStop();
+    }
+
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
     }
 
     /**新增下载任务**/
@@ -264,6 +282,9 @@ public class DownloadFragment extends Fragment {
         public void removeID(int ID){
             id_pool.set(ID,-1);
         }
+        public void clear(){
+            id_pool.clear();
+        }
     }
     private ID id;
 
@@ -340,11 +361,13 @@ public class DownloadFragment extends Fragment {
                 int taskID = (beg_pau_btn.getId()-UI_offset.BEG_PAUSE_BTN)/ID_offset;
                 if(sign.equals(PAUSE_SIGN)) {
                     pau_DownloadTask(taskID);
+                    //del_DownloadTask(taskID);
                 }
                 else {
-                    //res_DownloadTask(taskID);
-                    /**test**/
-                    fin_DownloadTask(taskID);
+                    res_DownloadTask(taskID);
+                    /**fot test**/
+                    //del_DownloadTask(taskID);
+                    //fin_DownloadTask(taskID);
                 }
             }
         });
@@ -378,6 +401,8 @@ public class DownloadFragment extends Fragment {
         //1.2内层 进度条
         ProgressBar taskProgress = new ProgressBar(mContext,null,android.R.attr.progressBarStyleHorizontal);
         taskProgress.setVisibility(View.VISIBLE);
+        taskProgress.setMax(task.getFilesize());
+        taskProgress.setProgress(task.getDownsize());
         taskProgress.setId(idbase*ID_offset+UI_offset.PRO_BAR);
         taskLayout.addView(taskProgress,1);
 

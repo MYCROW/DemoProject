@@ -6,9 +6,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -118,21 +120,36 @@ public class DownloadFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        ArrayList<DownloadTask> taskList = downloadManager.initTaskList();//应该放在新线程中？
-        for (int i = 0; i < taskList.size(); i++) {
-            //加载数据库 未完成任务显示
-            if(taskList.get(i).getisFinish()==false) {
-                //清除原有视图
-                baseLayout.removeAllViews();
-                id.clear();
-                show(taskList.get(i));
-            }
-            else{
-                //已完成任务让finish fragment显示
-                mDowInitInterface.onDownloadInit(taskList.get(i));
+        //开启初始化任务列表线程
+        InitTaskListTask initTaskList = new InitTaskListTask();
+        initTaskList.execute();
+    }
+    public class InitTaskListTask extends AsyncTask<String,Integer,ArrayList<DownloadTask>>{
+        @Override
+        protected  ArrayList<DownloadTask> doInBackground(String ...param){
+            ArrayList<DownloadTask> taskList = downloadManager.initTaskList();
+            return taskList;
+        }
+        @Override
+        protected void onPostExecute(ArrayList<DownloadTask> taskList){
+            //清除原有视图
+            baseLayout.removeAllViews();
+            id.clear();
+//            Log.i("TaskList",""+taskList.size());
+            for (int i = 0; i < taskList.size(); i++) {
+                //加载数据库 未完成任务显示
+//                Log.i("TaskList",""+taskList.get(i).getisFinish());
+                if(taskList.get(i).getisFinish()==false) {
+                    show(taskList.get(i));
+                }
+                else{
+                    //已完成任务让finish fragment显示
+                    mDowInitInterface.onDownloadInit(taskList.get(i));
+                }
             }
         }
     }
+
 
     private LinearLayout baseLayout;
     @Nullable
@@ -153,9 +170,21 @@ public class DownloadFragment extends Fragment {
     public void onStop(){
         //保存未完成任务到数据库
         //应该记录下载任务的下载状态
-        downloadManager.storeTaskList();
+        StoreTaskListTask storeTaskListTask = new StoreTaskListTask();
+        storeTaskListTask.execute();
         super.onStop();
     }
+    public class StoreTaskListTask extends AsyncTask<String,Integer,Void>{
+        @Override
+        protected  Void doInBackground(String ...param){
+            downloadManager.storeTaskList();
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void a){
+        }
+    }
+
 
     @Override
     public void onDestroy(){
@@ -244,7 +273,7 @@ public class DownloadFragment extends Fragment {
         rem_DownloadTask(taskID);
     }
 
-    //ID regular
+    //ID regular:
     //ID = ID_offset*idbase + UI_offset
     private int ID_offset = 5;
     public class UI_offset {

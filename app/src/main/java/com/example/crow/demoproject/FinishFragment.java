@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.annotation.Nullable;
@@ -72,19 +73,31 @@ public class FinishFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_finish, container, false);
         this.view = view;
         finishList = (LinearLayout)view.findViewById(R.id.finishList);
-        if(taskList.size() != 0){
-            for(int i =0;i<taskList.size();i++)
-                setTask(taskList.get(i));
-        }
         return view;
     }
 
-    public void getTask(DownloadTask task){
-        taskList.add(task);
+    @Override
+    public void onStart(){
+        super.onStart();
+        ShowFinishTaskTask showFinishTaskTask = new ShowFinishTaskTask();
+        showFinishTaskTask.execute();
+    }
+    public class ShowFinishTaskTask extends AsyncTask<String,Integer,ArrayList<DownloadTask>> {
+        @Override
+        protected  ArrayList<DownloadTask> doInBackground(String ...param){
+            return taskList;
+        }
+        @Override
+        protected void onPostExecute(ArrayList<DownloadTask> taskList){
+            finishList.removeAllViews();
+            id.clear();
+            for(int i =0;i<taskList.size();i++)
+                show(taskList.get(i));
+        }
     }
 
-    public void setTask(DownloadTask task){
-        show(task);
+    public void receiveTask(DownloadTask task){
+        taskList.add(task);
     }
 
     public void del_Task(int task_ID){
@@ -129,6 +142,9 @@ public class FinishFragment extends Fragment {
         }
         public void removeID(int ID){
             id_pool.set(ID,-1);
+        }
+        public void clear(){
+            id_pool.clear();
         }
     }
     private ID id;

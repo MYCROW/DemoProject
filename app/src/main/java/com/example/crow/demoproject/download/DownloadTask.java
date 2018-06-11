@@ -28,6 +28,7 @@ public class DownloadTask implements Runnable{
     private int downsize = 0;
     private boolean isExit = false;
     private boolean isFinish = false;
+    private boolean isDownloading = false;
 
     //进度条更新
     private Handler handler;

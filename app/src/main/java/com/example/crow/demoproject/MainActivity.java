@@ -175,7 +175,7 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     //实现接口DownloadFinishInterface
     @Override
     public void onDownloadFinish(DownloadTask task) {
-        this.finishFragment.setTask(task);
+        this.finishFragment.receiveTask(task);
     }
 
     @Override
@@ -187,7 +187,7 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     public void onDownloadInit(DownloadTask task) {
         this.finishFragment = pagerAdapter.finishFragment;
         //Log.i("onDownloadFinish",task.getFilename());
-        this.finishFragment.getTask(task);
+        this.finishFragment.receiveTask(task);
     }
 
 }

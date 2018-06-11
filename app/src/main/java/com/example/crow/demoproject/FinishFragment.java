@@ -79,6 +79,17 @@ public class FinishFragment extends Fragment {
     @Override
     public void onStart(){
         super.onStart();
+    }
+
+    @Override
+    public void onStop(){
+        taskList.clear();
+        super.onStop();
+    }
+
+    public void receiveTask(DownloadTask task){
+        taskList.add(task);
+        //更新UI
         ShowFinishTaskTask showFinishTaskTask = new ShowFinishTaskTask();
         showFinishTaskTask.execute();
     }
@@ -96,9 +107,7 @@ public class FinishFragment extends Fragment {
         }
     }
 
-    public void receiveTask(DownloadTask task){
-        taskList.add(task);
-    }
+
 
     public void del_Task(int task_ID){
         LinearLayout taskLayout = (LinearLayout)view.findViewById(task_ID*ID_offset+UI_offset.TASK_ID);

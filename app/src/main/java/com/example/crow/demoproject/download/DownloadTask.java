@@ -76,15 +76,19 @@ public class DownloadTask implements Runnable{
 
     public boolean getisExit(){return isExit;}
 
+
+    public final static int MAX_PROGRESS = 10;
+
     public void run() {
         try {
+            //两种情况处理：可以得到文件大小，不能得到文件大小
             Log.i("DownloadTask",filename+" thread"+Thread.currentThread().toString()+" run");
-            //Thread.sleep(10000);
+            //获取下载文件基本信息
             loader = new FileDownloadered(mContext,filename,downloadUrl, saveFile, threadnum);
             if(loader.getFileSize()>0)
                 progressbar.setMax(loader.getFileSize());//设置进度条的最大刻度
             else {
-                progressbar.setMax(1);
+                progressbar.setMax(MAX_PROGRESS);
             }
             loader.download(new com.example.crow.demoproject.download.DownloadProgressListener() {
                 public void onDownloadSize(int size) {

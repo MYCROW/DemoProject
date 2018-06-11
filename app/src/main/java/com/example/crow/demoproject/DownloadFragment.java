@@ -36,6 +36,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import static android.content.ContentValues.TAG;
+import static com.example.crow.demoproject.download.DownloadTask.MAX_PROGRESS;
 
 public class DownloadFragment extends Fragment {
     public static final String ARG_PAGE = "ARG_PAGE";
@@ -44,42 +45,6 @@ public class DownloadFragment extends Fragment {
     private Context mContext;
 
     private DownloadManager downloadManager;
-
-    public final int PROCESSING = 1;
-    public final int FAILURE = -1;//?
-
-    /**监听进度条**/
-    private Handler handler = new UIHander();
-    private final class UIHander extends Handler{
-        private int count = 0;
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                //下载时
-                case PROCESSING:
-                    int id = msg.getData().getInt("id");
-                    int size = msg.getData().getInt("size");     //从消息中获取已经下载的数据长度
-                    int hasFinish = msg.getData().getInt("hasfinish");
-                    int hasFileSize = msg.getData().getInt("hasFileSize");
-                    ProgressBar progressbar = view.findViewById(id * ID_offset + UI_offset.PRO_BAR);
-                    if (hasFileSize == 1){//能获得文件大小
-                        progressbar.setProgress(size);//设置进度条的进度
-                    }
-                    else{
-                        if(count++ == 0)
-                            Toast.makeText(mContext, "文件大小未知，无法更新进度", Toast.LENGTH_SHORT).show();
-                        progressbar.setProgress(0);
-                    }
-                    if (hasFinish == 1) { //下载完成时提示
-                        Toast.makeText(mContext, "文件下载成功", Toast.LENGTH_SHORT).show();
-                        fin_DownloadTask(id);
-                    }
-                    break;
-                case FAILURE:    //下载失败时提示
-                    Toast.makeText(mContext, "文件下载失败", Toast.LENGTH_SHORT).show();
-                    break;
-            }
-        }
-    }
 
     public static DownloadFragment newInstance(int page) {
         Bundle args = new Bundle();
@@ -273,6 +238,47 @@ public class DownloadFragment extends Fragment {
         rem_DownloadTask(taskID);
     }
 
+    /**监听进度条**/
+    public final int PROCESSING = 1;
+    public final int FAILURE = -1;//?
+    private Handler handler = new UIHander();
+    private final class UIHander extends Handler{
+        private int count = 0;//记录调用次数
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                //下载时
+                case PROCESSING:
+                    int id = msg.getData().getInt("id");
+                    int size = msg.getData().getInt("size");     //从消息中获取已经下载的数据长度
+                    int hasFinish = msg.getData().getInt("hasfinish");
+                    int hasFileSize = msg.getData().getInt("hasFileSize");
+                    ProgressBar progressbar = view.findViewById(id * ID_offset + UI_offset.PRO_BAR);
+                    if (hasFileSize == 1){//能获得文件大小
+                        progressbar.setProgress(size);//设置进度条的进度
+                    }
+                    else{
+                        if(count++ == 0)
+                            Toast.makeText(mContext, "文件大小未知，无法更新进度", Toast.LENGTH_SHORT).show();
+                        if(count<MAX_PROGRESS-1)
+                            progressbar.setProgress(count);
+                        else
+                            progressbar.setProgress(MAX_PROGRESS-1);
+                    }
+                    if (hasFinish == 1) { //下载完成时提示
+                        int finishsize = hasFileSize==1?size:MAX_PROGRESS;
+                        Toast.makeText(mContext, "文件下载成功", Toast.LENGTH_SHORT).show();
+                        progressbar.setProgress(finishsize);
+                        fin_DownloadTask(id);
+                    }
+                    break;
+                case FAILURE:    //下载失败时提示
+                    Toast.makeText(mContext, "文件下载失败", Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        }
+    }
+
+
     //ID regular:
     //ID = ID_offset*idbase + UI_offset
     private int ID_offset = 5;
@@ -390,13 +396,11 @@ public class DownloadFragment extends Fragment {
                 int taskID = (beg_pau_btn.getId()-UI_offset.BEG_PAUSE_BTN)/ID_offset;
                 if(sign.equals(PAUSE_SIGN)) {
                     pau_DownloadTask(taskID);
-                    //del_DownloadTask(taskID);
                 }
                 else {
                     res_DownloadTask(taskID);
                     /**fot test**/
                     //del_DownloadTask(taskID);
-                    //fin_DownloadTask(taskID);
                 }
             }
         });

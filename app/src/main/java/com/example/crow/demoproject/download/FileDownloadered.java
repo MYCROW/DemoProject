@@ -302,7 +302,8 @@ public class FileDownloadered {
                 }
                 if(getExited())
                     break;
-                if(listener!=null)//确定退出则不再执行监听
+                //确定退出则不再执行监听
+                if(listener!=null)
                     listener.onDownloadSize(this.downloadedSize,this.downloadspeed);//通知目前已经下载完成的数据长度，在DownloadThread内更新了downloadedSize
             }
             if(this.finish) //下载完成不删除记录？设置为已完成

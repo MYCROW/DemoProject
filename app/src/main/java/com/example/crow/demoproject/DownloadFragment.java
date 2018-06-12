@@ -181,18 +181,19 @@ public class DownloadFragment extends Fragment {
     }
 
     /**把下载任务移动到已完成列表**/
-    //不在下载管理器中移除
+    /**remove download task which has finished to finish fragment,without removing it from download manager**/
     public void rem_DownloadTask(int taskID){
         String filename;
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
         filename = temp.getText().toString();
-        //downloadManager.delDownloadTask(filename);
         LinearLayout baseList = (LinearLayout)view.findViewById(R.id.baseList);
         LinearLayout taskLayout = (LinearLayout)view.findViewById(taskID*ID_offset+UI_offset.TASK_ID);
         baseList.removeView(taskLayout);
         id.removeID(taskID);
     }
+
     /**Finish fragment删除已完成任务接口引起调用**/
+    /**remove downloadtask from download manager **/
     public void del_DownloadTaskByfilename(String filename){
         //询问是否删除本地文件
         final String temp = filename;
@@ -226,8 +227,10 @@ public class DownloadFragment extends Fragment {
         Button btn = (Button)view.findViewById(taskID*ID_offset+UI_offset.BEG_PAUSE_BTN);
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
         String filename = temp.getText().toString();
-        downloadManager.resDownloadTask(filename);
         btn.setText(PAUSE_SIGN);
+        if(!downloadManager.resDownloadTask(filename))
+            btn.setText(RESUME_SIGN);
+        //btn.setText(PAUSE_SIGN);
     }
     /**暂停下载任务**/
     public void pau_DownloadTask(int taskID){
@@ -272,12 +275,11 @@ public class DownloadFragment extends Fragment {
                     ProgressBar progressbar = view.findViewById(id * ID_offset + UI_offset.PRO_BAR);
                     if(progressbar == null)//由于退出的原因而无法获得进度条
                         return;
-                    //能获得文件大小size代表大小 不能获得文件大小size代表速度
+                    //size代表下载文件大小 speed代表速度（当hasFileSize为0才考虑
                     if (hasFileSize == 1) progressbar.setProgress(size);//设置进度条的进度
                     else{
-//                        if(count++ == 0)
-//                            Toast.makeText(mContext, "文件大小未知，无法更新进度", Toast.LENGTH_SHORT).show();
-                        size= progressbar.getProgress()+size;
+                        int speed =  msg.getData().getInt("speed");
+                        size= progressbar.getProgress()+speed;
                         if(size >= MAX_PROGRESS-BASIC_PROGRESS)
                             size = MAX_PROGRESS-BASIC_PROGRESS;
                         progressbar.setProgress(size);
@@ -286,6 +288,11 @@ public class DownloadFragment extends Fragment {
                         int finishsize = hasFileSize==1?size:MAX_PROGRESS;
                         Toast.makeText(mContext, "文件下载成功", Toast.LENGTH_SHORT).show();
                         progressbar.setProgress(finishsize);
+//                        try{
+//                            Thread.sleep(1000);
+//                        }
+//                        catch (Exception e){
+//                        }
                         fin_DownloadTask(id);
                     }
                     break;

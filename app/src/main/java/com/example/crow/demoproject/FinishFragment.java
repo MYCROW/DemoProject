@@ -110,6 +110,14 @@ public class FinishFragment extends Fragment {
 
 
     public void del_Task(int task_ID){
+        TextView temp = (TextView)view.findViewById(task_ID*ID_offset+UI_offset.TEXT_VIEW);
+        String filename = temp.getText().toString();
+        for(int i =0;i<taskList.size();i++){
+            if(taskList.get(i).getFilename().equals(filename)) {
+                taskList.remove(i);
+                break;
+            }
+        }
         LinearLayout taskLayout = (LinearLayout)view.findViewById(task_ID*ID_offset+UI_offset.TASK_ID);
         finishList.removeView(taskLayout);
         id.removeID(task_ID);
@@ -160,9 +168,9 @@ public class FinishFragment extends Fragment {
     public final String CHECK_SIGN = "查看细节";
     public final String DELETE_SIGN = "删除记录";
 
-
+    /**把task显示在finishfragment中 动态布局**/
     public void show(DownloadTask task){
-        Log.i("show",task.getFilename());
+        //Log.i("show",task.getFilename());
         final int idbase = id.getID();
         task.setId_Fini(idbase);
         final String filename = task.getFilename();
@@ -231,7 +239,7 @@ public class FinishFragment extends Fragment {
                 TextView vv = new TextView(mContext);
                 vv.setText("文件名："+filename+"\n"
                         +"文件路径："+savefile+"\n"
-                        +"文件大小："+filesize);
+                        +"文件大小："+filesize+" bytes");
                 builder.setView(vv);
                 builder.setPositiveButton("确定", new DialogInterface.OnClickListener()
                 {

@@ -115,6 +115,7 @@ public class DownloadManager {
 
     /**为新添下载任务创建唯一文件名**/
     //新文件名格式:原名 有重复则在第一段文件名后加 （n）
+    //再检查一次获得可用的n
     private String createFilename(String path){
         String filename = "";
         //获取URL最后一个'/'后的字符串
@@ -128,21 +129,36 @@ public class DownloadManager {
             return "";
         }
         //url地址合法 生成文件名
-        //用'.'分割 取第一部分判断是否有重复并计数
+        //用'.'分割  除第一部分有不同则跳过
+        // 取第一部分判断是否有重复并计数
+        //String filename
         String []temp = filename.split("\\.");
-        String tempname = temp[0];
         int count = 0;
         for(int i =0;i<taskList.size();i++){
             String compname = taskList.get(i).getFilename();
-            if(compname.contains(tempname))
+            String []comptemp = compname.split("\\.");
+            if(comptemp[0].contains(temp[0]))
                 count++;
         }
-        if(count != 0){
-        //如果有重复 在第一部分的末尾加(count)
-            tempname+="("+count+")";
-            filename = tempname;
-            for(int i =1;i<temp.length;i++)
-                filename += "."+temp[i];
+        for(int d =0;d<=count;d++) {
+            //如果有重复 在第一部分的末尾加(count)
+            String t= temp[0];
+            if(d!=0)
+                t = t + "(" + d + ")";
+            filename = t;
+            for (int i = 1; i < temp.length; i++)
+                filename += "." + temp[i];
+            //再次检查新文件名
+            int flag = 0;
+            for(flag =0;flag<taskList.size();flag++){
+                String compname = taskList.get(flag).getFilename();
+                if(compname.equals(filename))
+                    break;
+            }
+            if(flag != taskList.size())//新文件名与现有文件名重复
+                continue;
+            else
+                break;
         }
         //没有重复就直接返回资源文件名
         return filename;
@@ -161,19 +177,22 @@ public class DownloadManager {
     }
     /**开启下载任务**/
     //downtask的线程管理
-    public void startDownloadTask(DownloadTask task){
+    public boolean startDownloadTask(DownloadTask task){
         if(task.getFilename()== null
                 || task.getDownloadUrl() == null
                 || task.getSavefile() == null){
-            return;
+            return false;
         }
         /**to be finish**/
         try {
             threadpool.execute(task);
+            return true;
         }
         catch(Exception e){
             //线程创建失败处理
+            pauDownloadTask(task.getFilename());
             Log.i("ThreadPool excute",e.toString());
+            return false;
         }
     }
 
@@ -208,12 +227,15 @@ public class DownloadManager {
         //Log.i("DownloadManager","数据库中删除");
     }
     /**to be finished**/
-    public void resDownloadTask(String filename){
+    public boolean resDownloadTask(String filename){
         DownloadTask task = getTaskbyFilename(filename);
         //if(task ==null)
         //to be finished
         task.setisExit(false);
-        startDownloadTask(task);
+        if(!startDownloadTask(task))
+            return false;
+        else
+            return true;
     }
     /**to be finished**/
     public void pauDownloadTask(String filename){

@@ -95,8 +95,10 @@ public class DownloadTask implements Runnable{
                     msg.what = 1;
                     msg.getData().putInt("id",id_List);
                     msg.getData().putInt("hasfinish",loader.getFinsih()?1:0);
-                    if(loader.getFinsih())
-                        isFinish=true;
+                    if(loader.getFinsih()) {
+                        isFinish = true;
+                        filesize = size;
+                    }
                     else
                         isFinish=false;
                     if(loader.getFileSize()>0) {
@@ -104,8 +106,9 @@ public class DownloadTask implements Runnable{
                         msg.getData().putInt("hasFileSize", 1);
                     }
                     else {//使用预测速度代替下载大小传递 DownloadFragment中处理
-                        size = (downloadSpeed/BASIC_SPEED)*BASIC_PROGRESS;
+                        int speed = (downloadSpeed/BASIC_SPEED)*BASIC_PROGRESS;
                         msg.getData().putInt("size", size);
+                        msg.getData().putInt("speed",speed);
                         msg.getData().putInt("hasFileSize", 0);
                     }
                     handler.sendMessage(msg);

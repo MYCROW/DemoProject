@@ -21,19 +21,19 @@ public class DownloadTaskThreadPool extends ThreadPoolExecutor {
         super(corePoolSize,maxPoolSize,10,TimeUnit.SECONDS,new ArrayBlockingQueue<Runnable>(maxPoolSize),sThreadFactory);
         this.corePoolSize = corePoolSize;
         this.maxPoolSize = maxPoolSize;
-//        this.keepAliveTime = KEEPTIME;
-//        this.unit = UNIT;
     }
-
 
     @Override
     public void execute(Runnable runnable) {
-        try {
-            super.execute(runnable);
-        }
-        catch(Exception e){
-            Log.i("ThreadPool excute",e.toString());
-        }
+//        try {
+//            super.execute(runnable);
+//            isSuccess = true;
+//        }
+//        catch(Exception e){
+//            isSuccess = false;
+//            Log.i("ThreadPool excute",e.toString());
+//        }
+        super.execute(runnable);
     }
 
     //private final AtomicInteger mCount = new AtomicInteger(1);

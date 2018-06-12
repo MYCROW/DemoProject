@@ -59,12 +59,13 @@ public class DownloadManager {
 
     /**保存当前任务信息到数据库**/
     public void storeTaskList() {
+        threadpool.shutdown();//终止线程池？
         Map<String, String> data1 = db_downloadOperator.getAllFilename_finish();
         Map<String, String> data2 = db_downloadOperator.getAllFilename_unfinish();
-        Log.i("DownloadManager", "store");
+        //Log.i("DownloadManager", "store");
         for (int i = 0; i < taskList.size(); i++) {
             DownloadTask da = taskList.get(i);
-            if (da.getisFinish() == false) {//未完成任务
+            if (!da.getisFinish()) {//未完成任务
                 boolean flag = false;
                 for (String key : data2.keySet()) {
                     String value = data2.get(key);
@@ -92,9 +93,8 @@ public class DownloadManager {
                         break;
                     }
                 }
-                if (flag == true)//数据库已存在当前任务信息
-                    continue;
-                else {
+                if (!flag)//数据库不存在当前任务信息
+                {
                     Map<Integer, Integer> t = new HashMap<Integer, Integer>();
                     t.put(0, 0);
                     t.put(1, da.getDownsize());
@@ -114,10 +114,10 @@ public class DownloadManager {
     }
 
     /**为新添下载任务创建唯一文件名**/
-    //文件名格式：path+时间戳
-    private final int MOD = 10000;//控制时间戳
+    //新文件名格式:原名 有重复则在第一段文件名后加 （n）
     private String createFilename(String path){
         String filename = "";
+        //获取URL最后一个'/'后的字符串
         try {
             Urlpath pathcheck = new Urlpath(path);
             if(pathcheck.getPath()=="/")
@@ -128,19 +128,23 @@ public class DownloadManager {
             return "";
         }
         //url地址合法 生成文件名
-        long currentTime=System.currentTimeMillis()%10000;
-        String timestamp = "_"+currentTime;
+        //用'.'分割 取第一部分判断是否有重复并计数
         String []temp = filename.split("\\.");
-        String tempname = "";
-        if(temp.length>1){
-            tempname = tempname+temp[0]+timestamp;
-            for(int i = 1;i<temp.length;i++)
-                tempname = tempname+"."+temp[i];
+        String tempname = temp[0];
+        int count = 0;
+        for(int i =0;i<taskList.size();i++){
+            String compname = taskList.get(i).getFilename();
+            if(compname.contains(tempname))
+                count++;
+        }
+        if(count != 0){
+        //如果有重复 在第一部分的末尾加(count)
+            tempname+="("+count+")";
             filename = tempname;
+            for(int i =1;i<temp.length;i++)
+                filename += "."+temp[i];
         }
-        else{
-            filename = filename+timestamp;
-        }
+        //没有重复就直接返回资源文件名
         return filename;
     }
 
@@ -164,10 +168,28 @@ public class DownloadManager {
             return;
         }
         /**to be finish**/
-        threadpool.execute(task);
+        try {
+            threadpool.execute(task);
+        }
+        catch(Exception e){
+            //线程创建失败处理
+            Log.i("ThreadPool excute",e.toString());
+        }
     }
-    //挂起下载任务
-    //public void
+
+    /**根据文件名删除本地文件**/
+    public void delDownloadFile(String filename){
+        //Log.i("Delete",filename);
+        if(saveDir.isDirectory()){
+            File[] childFile = saveDir.listFiles();
+            for (File f : childFile){
+                if(f.getName().equals(filename)) {
+                    //Log.i("Delete File",f.getName().toString());
+                    f.delete();
+                }
+            }
+        }
+    }
 
     /**根据文件名删除下载任务**/
     public void delDownloadTask(String filename){

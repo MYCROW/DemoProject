@@ -187,7 +187,7 @@ public class FinishFragment extends Fragment {
         //显示文件名 TextView
         //1.1.1 TextView布局 靠左
         RelativeLayout.LayoutParams tvAddParam = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                600,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         tvAddParam.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         TextView filename_text = new TextView(mContext);
@@ -198,7 +198,7 @@ public class FinishFragment extends Fragment {
 
         //1.1.2查看信息按钮 Button按钮布局 靠右
         RelativeLayout.LayoutParams btnAddParam = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                240,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         // 靠右放置
         btnAddParam.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
@@ -210,7 +210,7 @@ public class FinishFragment extends Fragment {
 
         //1.1.3删除按钮 Button按钮布局 查看信息的左边
         RelativeLayout.LayoutParams btnDelParam = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                240,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         btnDelParam.addRule(RelativeLayout.LEFT_OF, beg_pau_btn.getId());
         btnDelParam.addRule(RelativeLayout.RIGHT_OF, filename_text.getId());

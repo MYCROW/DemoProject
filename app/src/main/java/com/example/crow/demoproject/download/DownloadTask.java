@@ -28,7 +28,6 @@ public class DownloadTask implements Runnable{
     private int downsize = 0;
     private boolean isExit = false;
     private boolean isFinish = false;
-    private boolean isDownloading = false;
 
     //进度条更新
     private Handler handler;
@@ -76,8 +75,9 @@ public class DownloadTask implements Runnable{
 
     public boolean getisExit(){return isExit;}
 
-
-    public final static int MAX_PROGRESS = 10;
+    public final static int MAX_PROGRESS = 1000;
+    public final static int BASIC_PROGRESS = 10;
+    private final int BASIC_SPEED = 1024;
 
     public void run() {
         try {
@@ -87,20 +87,27 @@ public class DownloadTask implements Runnable{
             loader = new FileDownloadered(mContext,filename,downloadUrl, saveFile, threadnum);
             if(loader.getFileSize()>0)
                 progressbar.setMax(loader.getFileSize());//设置进度条的最大刻度
-            else {
+            else
                 progressbar.setMax(MAX_PROGRESS);
-            }
             loader.download(new com.example.crow.demoproject.download.DownloadProgressListener() {
-                public void onDownloadSize(int size) {
+                public void onDownloadSize(int size,int downloadSpeed) {
                     Message msg = new Message();
                     msg.what = 1;
-                    msg.getData().putInt("size", size);
                     msg.getData().putInt("id",id_List);
                     msg.getData().putInt("hasfinish",loader.getFinsih()?1:0);
-                    if(loader.getFileSize()>0)
-                        msg.getData().putInt("hasFileSize",1);
+                    if(loader.getFinsih())
+                        isFinish=true;
                     else
-                        msg.getData().putInt("hasFileSize",0);
+                        isFinish=false;
+                    if(loader.getFileSize()>0) {
+                        msg.getData().putInt("size", size);
+                        msg.getData().putInt("hasFileSize", 1);
+                    }
+                    else {//使用预测速度代替下载大小传递 DownloadFragment中处理
+                        size = (downloadSpeed/BASIC_SPEED)*BASIC_PROGRESS;
+                        msg.getData().putInt("size", size);
+                        msg.getData().putInt("hasFileSize", 0);
+                    }
                     handler.sendMessage(msg);
                     if(getisExit())
                         loader.exit();

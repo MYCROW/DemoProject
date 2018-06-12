@@ -82,7 +82,7 @@ public class DownloadThread extends Thread{
                 http.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.2; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)");
                 http.setRequestProperty("Connection", "Keep-Alive");
                 //以下与上面的不同
-                int startPos = 0;//开始位置
+                int startPos = downLength;//开始位置
                 //int endPos = block * threadId -1;//结束位置未知
                 //http.setRequestProperty("Range", "bytes=" + startPos + "-"+ endPos);//设置获取实体数据的范围
 
@@ -100,6 +100,7 @@ public class DownloadThread extends Thread{
                     downLength += offset;             //把新线程已经写到文件中的数据加入到下载长度中
                     filedownloadered.update(this.threadId, downLength); //把该线程已经下载的数据长度更新到数据库和内存哈希表中
                     filedownloadered.append(offset);            //把新下载的数据长度加入到已经下载的数据总长度中
+                    filedownloadered.appendper(offset);
                 }
                 threadfile.close();
                 inStream.close();

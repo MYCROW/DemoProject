@@ -1,21 +1,17 @@
 package com.example.crow.demoproject;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,19 +19,15 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.crow.demoproject.download.*;
 
-import org.w3c.dom.Text;
-
 import java.io.File;
 import java.util.ArrayList;
 
-import static android.content.ContentValues.TAG;
+import static com.example.crow.demoproject.download.DownloadTask.BASIC_PROGRESS;
 import static com.example.crow.demoproject.download.DownloadTask.MAX_PROGRESS;
 
 public class DownloadFragment extends Fragment {
@@ -127,7 +119,6 @@ public class DownloadFragment extends Fragment {
 
     @Override
     public void onResume(){
-        //恢复状态显示为正在下载的下载任务
         super.onResume();
     }
 
@@ -176,11 +167,13 @@ public class DownloadFragment extends Fragment {
         show(task);
     }
     /**直接删除下载任务**/
+    //也删除已下载的文件？
     public void del_DownloadTask(int taskID){
         String filename;
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
         filename = temp.getText().toString();
         downloadManager.delDownloadTask(filename);
+        downloadManager.delDownloadFile(filename);
         LinearLayout baseList = (LinearLayout)view.findViewById(R.id.baseList);
         LinearLayout taskLayout = (LinearLayout)view.findViewById(taskID*ID_offset+UI_offset.TASK_ID);
         baseList.removeView(taskLayout);
@@ -201,7 +194,31 @@ public class DownloadFragment extends Fragment {
     }
     /**Finish fragment删除已完成任务接口引起调用**/
     public void del_DownloadTaskByfilename(String filename){
-        downloadManager.delDownloadTask(filename);
+        //询问是否删除本地文件
+        final String temp = filename;
+        AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+        builder.setTitle("是否同时删除下载文件？");
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                downloadManager.delDownloadFile(temp);
+                downloadManager.delDownloadTask(temp);
+                Toast.makeText(mContext, "删除下载文件和记录!" , Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton("只删除下载记录",  new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                downloadManager.delDownloadTask(temp);
+                Toast.makeText(mContext, "删除下载记录!" , Toast.LENGTH_SHORT).show();
+            }
+        });
+        final android.app.AlertDialog alert = builder.create();
+        alert.show();
     }
 
     /**启动下载任务**/
@@ -253,16 +270,17 @@ public class DownloadFragment extends Fragment {
                     int hasFinish = msg.getData().getInt("hasfinish");
                     int hasFileSize = msg.getData().getInt("hasFileSize");
                     ProgressBar progressbar = view.findViewById(id * ID_offset + UI_offset.PRO_BAR);
-                    if (hasFileSize == 1){//能获得文件大小
-                        progressbar.setProgress(size);//设置进度条的进度
-                    }
+                    if(progressbar == null)//由于退出的原因而无法获得进度条
+                        return;
+                    //能获得文件大小size代表大小 不能获得文件大小size代表速度
+                    if (hasFileSize == 1) progressbar.setProgress(size);//设置进度条的进度
                     else{
-                        if(count++ == 0)
-                            Toast.makeText(mContext, "文件大小未知，无法更新进度", Toast.LENGTH_SHORT).show();
-                        if(count<MAX_PROGRESS-1)
-                            progressbar.setProgress(count);
-                        else
-                            progressbar.setProgress(MAX_PROGRESS-1);
+//                        if(count++ == 0)
+//                            Toast.makeText(mContext, "文件大小未知，无法更新进度", Toast.LENGTH_SHORT).show();
+                        size= progressbar.getProgress()+size;
+                        if(size >= MAX_PROGRESS-BASIC_PROGRESS)
+                            size = MAX_PROGRESS-BASIC_PROGRESS;
+                        progressbar.setProgress(size);
                     }
                     if (hasFinish == 1) { //下载完成时提示
                         int finishsize = hasFileSize==1?size:MAX_PROGRESS;
@@ -273,6 +291,7 @@ public class DownloadFragment extends Fragment {
                     break;
                 case FAILURE:    //下载失败时提示
                     Toast.makeText(mContext, "文件下载失败", Toast.LENGTH_SHORT).show();
+                    //下载失败处理...
                     break;
             }
         }
@@ -350,7 +369,7 @@ public class DownloadFragment extends Fragment {
         //显示文件名 TextView
         //1.1.1 TextView布局 靠左
         RelativeLayout.LayoutParams tvAddParam = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                600,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         tvAddParam.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         TextView filename_text = new TextView(mContext);
@@ -361,11 +380,10 @@ public class DownloadFragment extends Fragment {
 
         //1.1.2开始暂停按钮 Button按钮布局 靠右
         RelativeLayout.LayoutParams btnAddParam = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                240,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         // 靠右放置
         btnAddParam.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        //btnAddParam.addRule(RelativeLayout.RIGHT_OF, filename_text.getId());
         final Button beg_pau_btn = new Button(mContext);
         //默认开始按钮
         beg_pau_btn.setText(RESUME_SIGN);
@@ -375,7 +393,7 @@ public class DownloadFragment extends Fragment {
 
         //1.1.3取消按钮 Button按钮布局 开始/暂停的左边
         RelativeLayout.LayoutParams btnDelParam = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                240,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         btnDelParam.addRule(RelativeLayout.LEFT_OF, beg_pau_btn.getId());
         btnDelParam.addRule(RelativeLayout.RIGHT_OF, filename_text.getId());

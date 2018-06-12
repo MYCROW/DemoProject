@@ -31,6 +31,8 @@ public class FileDownloadered {
 
     private Context context;            //程序的上下文对象
     private int downloadedSize = 0;     //已下载的文件长度
+    private int downloadedSizeper = 0;  //每段时间文件下载长度
+    private int downloadspeed = 0;      //估算的下载速度
     private int fileSize = 0;           //开始的文件长度
 
     private DownloadThread[] threads;        //根据线程数设置下载的线程池
@@ -83,6 +85,17 @@ public class FileDownloadered {
     {
         //把实时下载的长度加入到总的下载长度中
         downloadedSize += size;
+    }
+
+    /**
+     * 累计每一段时间内已下载的大小
+     * 使用同步锁来解决并发的访问问题
+     * */
+    private int PERTIME = 1000;
+    public synchronized void appendper(int size)
+    {
+        //把实时下载的长度加入到每个时间段的下载长度中
+        downloadedSizeper += size;
     }
 
     /**
@@ -232,7 +245,8 @@ public class FileDownloadered {
                 }
                 this.downloadedSize = 0;   //设置已经下载的长度为0
             }
-            if (!single){//多线程下载
+            //多线程下载
+            if (!single){
                 for (int i = 0; i < this.threads.length; i++) {//开启线程进行下载
                     int downLength = this.data.get(i + THREADID_START);
                     //通过特定的线程id获取该线程已经下载的数据长度
@@ -249,8 +263,9 @@ public class FileDownloadered {
                     }
                 }
             }
-            else{//单线程下载 必定重新下载
-                int downLength = 0;
+            //单线程下载 必定重新下载？
+            else{
+                int downLength = this.data.get(0 + THREADID_START);
                 this.threads[0] = new DownloadThread(this, url, this.saveFile, this.block, downLength, 0 + THREADID_START);
                 this.threads[0].setPriority(7);
                 this.threads[0].start();
@@ -261,7 +276,14 @@ public class FileDownloadered {
             this.finish =false;
             //每隔一定时间检查线程状态+是否需要退出下载
             while (!finish) {
-                Thread.sleep(1000);
+                Thread.sleep(PERTIME);
+                if(downloadedSizeper>0) {
+                    downloadspeed = downloadedSizeper;
+                    downloadedSizeper = 0;
+                }
+                else{
+                    downloadspeed = 0;
+                }
                 this.finish =true;//先假定全部线程下载完成
                 for (int i = 0; i < this.threads.length; i++){// 循环判断所有线程是否完成下载
                     if (this.threads[i] != null && !this.threads[i].isFinish()) {
@@ -278,10 +300,10 @@ public class FileDownloadered {
                         }
                     }
                 }
-                if(listener!=null)
-                    listener.onDownloadSize(this.downloadedSize);//通知目前已经下载完成的数据长度，在DownloadThread内更新了downloadedSize
                 if(getExited())
                     break;
+                if(listener!=null)//确定退出则不再执行监听
+                    listener.onDownloadSize(this.downloadedSize,this.downloadspeed);//通知目前已经下载完成的数据长度，在DownloadThread内更新了downloadedSize
             }
             if(this.finish) //下载完成不删除记录？设置为已完成
                 fileService.updateFinish(this.downloadUrl,this.filename,1+"");

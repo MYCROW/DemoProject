@@ -6,7 +6,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.content.Intent;
@@ -45,10 +44,12 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
 
     private DownloadFragment downloadFragment;
     private FinishFragment finishFragment;
-    public boolean getDownloadFragment;
-    public boolean getFinishFragment;
+    private boolean nullflag;
+//    public boolean getDownloadFragment;
+//    public boolean getFinishFragment;
 
 
+    /**动态要求赋予权限**/
     // Storage Permissions
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
     private static String[] PERMISSIONS_STORAGE = {
@@ -75,28 +76,51 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
         pagerAdapter = new MainFragmentPagerAdapter(getSupportFragmentManager(), this);
         viewPager = (ViewPager) findViewById(R.id.viewPager);
         viewPager.setAdapter(pagerAdapter);
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            }
+            @Override
+            public void onPageSelected(int position) {
+                Log.i("ViewPager",pagerAdapter.getPageTitle(position).toString());
+            }
+            @Override
+            public void onPageScrollStateChanged(int state) {
+            }
+        });
+
         tabLayout = (TabLayout) findViewById(R.id.tabList);
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.setTabMode(TabLayout.MODE_FIXED);
 
         verifyStoragePermissions(this);
 
-        getDownloadFragment = false;
-        getFinishFragment = false;
+        nullflag =true;
         loadFragment();
     }
 
+    /**确保DownloadFragment和FinishFragment不为null**/
     void loadFragment(){
-        if(getFinishFragment && getFinishFragment)
-            return;
-        if(pagerAdapter.getDownloadFragment == true) {
-            this.downloadFragment = pagerAdapter.downloadFragment;
-            getDownloadFragment = true;
+//        if(getFinishFragment && getFinishFragment)
+//            return;
+//        if(pagerAdapter.getDownloadFragment == true) {
+//            this.downloadFragment = pagerAdapter.downloadFragment;
+//            getDownloadFragment = true;
+//        }
+//        if(pagerAdapter.getFinishFragment == true){
+//            this.finishFragment = pagerAdapter.finishFragment;
+//            getFinishFragment = true;
+//        }
+        if(pagerAdapter.downloadFragment != null) {
+            downloadFragment = pagerAdapter.downloadFragment;
+            nullflag = false;
         }
-        if(pagerAdapter.getFinishFragment == true){
-            this.finishFragment = pagerAdapter.finishFragment;
-            getFinishFragment = true;
-        }
+        else
+            nullflag = true;
+        if(pagerAdapter.finishFragment != null)
+            finishFragment = pagerAdapter.finishFragment;
+        else
+            nullflag = true;
     }
 
     @Override
@@ -164,7 +188,8 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
                 }
                 //开始下载
                 else{
-                    loadFragment();
+                    if(nullflag)
+                        loadFragment();
                     downloadFragment.add_DownloadTask(downloadAddr.getText());
                 }
                 alert.dismiss();

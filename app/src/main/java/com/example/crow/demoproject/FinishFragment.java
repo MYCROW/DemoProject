@@ -131,10 +131,10 @@ public class FinishFragment extends Fragment {
     //ID = ID_offset*idbase + UI_offset
     private int ID_offset = 4;
     public class UI_offset {
-        public final static int CHECK_BTN = 0;
-        public final static int DEL_BTN = 1;
-        public final static int TEXT_VIEW = 2;
-        public final static int TASK_ID =3;
+        final static int CHECK_BTN = 0;
+        final static int DEL_BTN = 1;
+        final static int TEXT_VIEW = 2;
+        final static int TASK_ID =3;
     }
 
     private class ID{
@@ -157,7 +157,7 @@ public class FinishFragment extends Fragment {
             }
             return id;
         }
-        public void removeID(int ID){
+        private void removeID(int ID){
             id_pool.set(ID,-1);
         }
         public void clear(){
@@ -275,7 +275,8 @@ public class FinishFragment extends Fragment {
     //传递信息的接口
     private DownloadDeleteInterface mDowFinInterface;
     public interface DownloadDeleteInterface{
-        public void onDownloadDelete(String filename);
+        void onDownloadDelete(String filename);
+        //public void onDownloadDelete(String filename);
     }
 }
 

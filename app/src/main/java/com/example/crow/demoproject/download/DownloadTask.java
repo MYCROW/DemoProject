@@ -118,7 +118,10 @@ public class DownloadTask implements Runnable{
             });
         } catch (Exception e) {
             e.printStackTrace();
-            handler.sendMessage(handler.obtainMessage(-1));
+            Message msg = new Message();
+            msg.what = -1;
+            msg.getData().putInt("id",id_List);
+            handler.sendMessage(msg);
         }
     }
 

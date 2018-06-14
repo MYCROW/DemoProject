@@ -228,9 +228,10 @@ public class DownloadFragment extends Fragment {
         TextView temp = (TextView)view.findViewById(taskID*ID_offset+UI_offset.TEXT_VIEW);
         String filename = temp.getText().toString();
         btn.setText(PAUSE_SIGN);
-        if(!downloadManager.resDownloadTask(filename))
+        if(!downloadManager.resDownloadTask(filename)) {
             btn.setText(RESUME_SIGN);
-        //btn.setText(PAUSE_SIGN);
+            Toast.makeText(mContext, "下载出错!" , Toast.LENGTH_SHORT).show();
+        }
     }
     /**暂停下载任务**/
     public void pau_DownloadTask(int taskID){
@@ -245,7 +246,7 @@ public class DownloadFragment extends Fragment {
     //传递信息的接口
     private DownloadFinishInterface mDowFinInterface;
     public interface DownloadFinishInterface{
-        public void onDownloadFinish(DownloadTask task);
+        void onDownloadFinish(DownloadTask task);
     }
     public void fin_DownloadTask(int taskID){
         String filename;
@@ -263,7 +264,6 @@ public class DownloadFragment extends Fragment {
     public final int FAILURE = -1;//?
     private Handler handler = new UIHander();
     private final class UIHander extends Handler{
-        private int count = 0;//记录调用次数
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 //下载时
@@ -288,17 +288,19 @@ public class DownloadFragment extends Fragment {
                         int finishsize = hasFileSize==1?size:MAX_PROGRESS;
                         Toast.makeText(mContext, "文件下载成功", Toast.LENGTH_SHORT).show();
                         progressbar.setProgress(finishsize);
-//                        try{
-//                            Thread.sleep(1000);
-//                        }
-//                        catch (Exception e){
-//                        }
                         fin_DownloadTask(id);
                     }
                     break;
                 case FAILURE:    //下载失败时提示
+                    int id2 = msg.getData().getInt("id");
                     Toast.makeText(mContext, "文件下载失败", Toast.LENGTH_SHORT).show();
-                    //下载失败处理...
+                    //删除已下载文件不删除任务
+                    String filename;
+                    TextView temp = view.findViewById(id2*ID_offset+UI_offset.TEXT_VIEW);
+                    filename = temp.getText().toString();
+                    ProgressBar progressbar2 = view.findViewById(id2 * ID_offset + UI_offset.PRO_BAR);
+                    progressbar2.setProgress(0);
+                    downloadManager.delDownloadFile(filename);
                     break;
             }
         }

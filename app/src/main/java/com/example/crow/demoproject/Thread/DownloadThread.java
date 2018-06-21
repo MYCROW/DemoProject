@@ -31,7 +31,7 @@ public class DownloadThread extends Thread{
 
     @Override
     public void run(){
-        if(downLength < block){//未下载完成
+        if(downLength < block){//可以得到文件大小的情况下 未下载完成
             try {
                 HttpURLConnection http = (HttpURLConnection) downUrl.openConnection();
                 http.setConnectTimeout(5 * 1000);
@@ -69,10 +69,29 @@ public class DownloadThread extends Thread{
                 print("Thread "+ this.threadId+ ":"+ e);
             }
         }
-        else{//单线程下载可能出现的情况 (block<=downLength)
+        else if(!filedownloadered.single){//没有得到文件大小的情况 多线程(block==0<=downLength)
+//            try {
+//                HttpURLConnection http = (HttpURLConnection) downUrl.openConnection();
+//                http.setConnectTimeout(5 * 1000);
+//                http.setRequestMethod("GET");
+//                http.setRequestProperty("Accept", "image/gif, image/jpeg, image/pjpeg, image/pjpeg, application/x-shockwave-flash, application/xaml+xml, application/vnd.ms-xpsdocument, application/x-ms-xbap, application/x-ms-application, application/vnd.ms-excel, application/vnd.ms-powerpoint, application/msword, */*");
+//                http.setRequestProperty("Accept-Language", "zh-CN");
+//                http.setRequestProperty("Referer", downUrl.toString());
+//                http.setRequestProperty("Charset", "UTF-8");
+//                http.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.2; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)");
+//                http.setRequestProperty("Connection", "Keep-Alive");
+//                //以下与上面的不同
+//                int startPos = downLength;//开始位置
+//                int endPos = block * threadId -1;//结束位置未知
+//            //http.setRequestProperty("Range", "bytes=" + startPos + "-"+ endPos);//设置获取实体数据的范围
+//            } catch (Exception e) {
+//                this.downLength = -1;               //设置该线程已经下载的长度为-1
+//                print("Thread "+ this.threadId+ ":"+ e);
+//            }
+        }
+        else {//没有得到文件大小的情况 单线程(block==0<=downLength)
             try {
                 HttpURLConnection http = (HttpURLConnection) downUrl.openConnection();
-
                 http.setConnectTimeout(5 * 1000);
                 http.setRequestMethod("GET");
                 http.setRequestProperty("Accept", "image/gif, image/jpeg, image/pjpeg, image/pjpeg, application/x-shockwave-flash, application/xaml+xml, application/vnd.ms-xpsdocument, application/x-ms-xbap, application/x-ms-application, application/vnd.ms-excel, application/vnd.ms-powerpoint, application/msword, */*");

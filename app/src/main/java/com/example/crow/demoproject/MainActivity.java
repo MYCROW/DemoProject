@@ -23,31 +23,25 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.Toast;
 
 import com.example.crow.demoproject.download.DownloadTask;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-
 public class MainActivity extends FragmentActivity implements DownloadFragment.DownloadFinishInterface,
         DownloadFragment.DownloadInitInterface,
         FinishFragment.DownloadDeleteInterface{
-//        implements DownloadFragment.OnFragmentInteractionListener
+
+    //ViewPager + TabLayout + PagerAdapter 实现标签切换fragment
     private MainFragmentPagerAdapter pagerAdapter;
-
     private ViewPager viewPager;
-
     private TabLayout tabLayout;
 
+    //从pagerAdapter处获得Fragment
     private DownloadFragment downloadFragment;
     private FinishFragment finishFragment;
     private boolean nullflag;
-//    public boolean getDownloadFragment;
-//    public boolean getFinishFragment;
-
 
     /**动态要求赋予权限**/
     // Storage Permissions
@@ -72,24 +66,30 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        //LinearLayout linearLayout = findViewById(R.id.main_line);
+
+        //linearLayout.setBackground();
+
         setContentView(R.layout.activity_main);
         pagerAdapter = new MainFragmentPagerAdapter(getSupportFragmentManager(), this);
-        viewPager = (ViewPager) findViewById(R.id.viewPager);
+        viewPager = findViewById(R.id.viewPager);
         viewPager.setAdapter(pagerAdapter);
+        //fragment切换事件侦听
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
             }
             @Override
             public void onPageSelected(int position) {
-                Log.i("ViewPager",pagerAdapter.getPageTitle(position).toString());
+                //Log.i("ViewPager",pagerAdapter.getPageTitle(position).toString());
             }
             @Override
             public void onPageScrollStateChanged(int state) {
             }
         });
 
-        tabLayout = (TabLayout) findViewById(R.id.tabList);
+        tabLayout = findViewById(R.id.tabList);
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.setTabMode(TabLayout.MODE_FIXED);
 
@@ -124,11 +124,10 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     }
 
     @Override
-    /*加载菜单栏xml*/
+    /**加载菜单栏xml**/
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-//        Log.i("ContentValues","Run");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -154,7 +153,7 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
         startActivity(intent);
     }
 
-    //function 新增下载任务
+    /**新增下载任务**/
     public void add_DownloadMission(){
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         //    设置Title的图标

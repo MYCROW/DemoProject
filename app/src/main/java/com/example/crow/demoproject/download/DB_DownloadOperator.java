@@ -28,7 +28,8 @@ public class DB_DownloadOperator {
         Cursor cursor = db.rawQuery("select "+VALUE_NAME+  ", "+
                         VALUE_PATH + " from "+
                         TABLE_NAME + " where "  +
-                        VALUE_ISFINISH + " = ? ",
+                        VALUE_ISFINISH + " = ? order by "+
+                        VALUE_ID + " ASC;",
                 new String[]{"0"});
         Map<String,String> data = new HashMap<String,String>();
         cursor.moveToFirst();
@@ -44,8 +45,9 @@ public class DB_DownloadOperator {
         SQLiteDatabase db = db_downloadTable.getReadableDatabase();
         Cursor cursor = db.rawQuery("select "+VALUE_NAME+  ", "+
                         VALUE_PATH + " from "+
-                        TABLE_NAME + " where "  +
-                        VALUE_ISFINISH + " = ? ",
+                        TABLE_NAME + " where " +
+                        VALUE_ISFINISH + " = ? order by "+
+                        VALUE_ID + " ASC;",
                 new String[]{"1"});
         Map<String,String> data = new HashMap<String,String>();
         cursor.moveToFirst();

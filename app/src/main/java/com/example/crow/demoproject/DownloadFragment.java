@@ -3,14 +3,19 @@ package com.example.crow.demoproject;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,9 +28,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.crow.demoproject.download.*;
+import com.example.crow.demoproject.superview.DragListView;
+import com.example.crow.demoproject.superview.DragListViewAdapter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.example.crow.demoproject.download.DownloadTask.BASIC_PROGRESS;
 import static com.example.crow.demoproject.download.DownloadTask.MAX_PROGRESS;
@@ -109,11 +117,29 @@ public class DownloadFragment extends Fragment {
 
 
     private LinearLayout baseLayout;
+    private DragListView baseList;
+    private List<String> dataList = new ArrayList<>();//存储数据
+    //private DragListViewAdapter listViewDemoAdapter;//DragListView(ListView)的数据适配器
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_download, container, false);
-        baseLayout = (LinearLayout)view.findViewById(R.id.baseList);
+        baseLayout = view.findViewById(R.id.baseList);
+
+        //实现拖拽的控件
+        //listViewDemoAdapter = new DragListViewAdapter(mContext,dataList);
+        baseList = new DragListView(mContext);
+        //baseList.setAdapter(listViewDemoAdapter);
+        baseList.setOnChangeListener(new DragListView.OnChanageListener() {
+            @Override
+            public void onChange(int form, int to) {
+                baseList.getChildAt(form);
+                baseList.getChildAt(to);
+            }
+        });
+        baseLayout.addView(baseList);
+
         return view;
     }
 
@@ -365,6 +391,8 @@ public class DownloadFragment extends Fragment {
         //透明背景
         taskLayout.setBackgroundColor(Color.argb(0, 255, 255, 0));
         taskLayout.setOrientation(LinearLayout.VERTICAL);
+        
+
         //最外层LinearLayout ID
         taskLayout.setId(idbase*ID_offset+UI_offset.TASK_ID);
         //1.1 内层 RelativeLayout
@@ -394,9 +422,18 @@ public class DownloadFragment extends Fragment {
         // 靠右放置
         btnAddParam.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         final Button beg_pau_btn = new Button(mContext);
+
         //默认开始按钮
         beg_pau_btn.setText(RESUME_SIGN);
         beg_pau_btn.setLayoutParams(btnAddParam);
+
+        //使用shape绘制控件
+        Drawable btn_shape = ContextCompat.getDrawable(mContext,R.drawable.button_shape);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            beg_pau_btn.setBackground(btn_shape);
+        } else {
+            beg_pau_btn.setBackgroundDrawable(btn_shape);
+        }
         //开始暂停按钮ID
         beg_pau_btn.setId(idbase*ID_offset+UI_offset.BEG_PAUSE_BTN);
 
@@ -409,6 +446,12 @@ public class DownloadFragment extends Fragment {
         final Button del_btn = new Button(mContext);
         del_btn.setText(CANCEL_SIGN);
         del_btn.setLayoutParams(btnDelParam);
+        //使用shape绘制控件 和开始按钮使用同一个shape
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            del_btn.setBackground(btn_shape);
+        } else {
+            del_btn.setBackgroundDrawable(btn_shape);
+        }
         //取消按钮ID
         del_btn.setId(idbase*ID_offset+UI_offset.DEL_BTN);
 
@@ -463,10 +506,15 @@ public class DownloadFragment extends Fragment {
         taskProgress.setVisibility(View.VISIBLE);
         taskProgress.setMax(task.getFilesize());
         taskProgress.setProgress(task.getDownsize());
+        //使用shape绘制进度条控件
+        Drawable pro_shape = ContextCompat.getDrawable(mContext,R.drawable.progressbar_shape);
+        taskProgress.setProgressDrawable(pro_shape);
+
         taskProgress.setId(idbase*ID_offset+UI_offset.PRO_BAR);
         taskLayout.addView(taskProgress,1);
 
         baseLayout.addView(taskLayout,-1);
+        //baseList.addView(taskLayout);
 
         task.setHandler(handler);
         task.setProgressbar(taskProgress);

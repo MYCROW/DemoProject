@@ -26,7 +26,8 @@ public class FileDownloadered {
     private DB_DownloadOperator fileService;        //获取本地数据库的业务Bean
 
     private boolean exited;             //停止下载的标志
-    private boolean single;             //单线程下载标志
+    public boolean single;             //单线程下载标志
+    public boolean unknowsize;         //无法获得文件大小标志
     private boolean finish;             //下载完成标志
 
     private Context context;            //程序的上下文对象
@@ -35,7 +36,7 @@ public class FileDownloadered {
     private int downloadspeed = 0;      //估算的下载速度
     private int fileSize = 0;           //开始的文件长度
 
-    private DownloadThread[] threads;        //根据线程数设置下载的线程池
+    private DownloadThread[] threads;   //根据线程数设置下载的线程池
     private File saveFile;              //数据保存到本地的文件中
     private Map<Integer, Integer> data = new ConcurrentHashMap<Integer, Integer>();  //缓存个条线程的下载的长度
     private int block;                   //每条线程下载的长度
@@ -86,9 +87,10 @@ public class FileDownloadered {
         //把实时下载的长度加入到总的下载长度中
         downloadedSize += size;
     }
-
+    //DownloadThread中调用
     /**
      * 累计每一段时间内已下载的大小
+     * 用于估算速度
      * 使用同步锁来解决并发的访问问题
      * */
     private int PERTIME = 1000;
@@ -97,7 +99,7 @@ public class FileDownloadered {
         //把实时下载的长度加入到每个时间段的下载长度中
         downloadedSizeper += size;
     }
-
+    //DownloadThread中调用
     /**
      * 更新指定线程最后下载的位置
      * @param threadId 线程id
@@ -113,14 +115,15 @@ public class FileDownloadered {
 
 
     /**
-     * 构建文件下载器
+     * 文件下载器构造函数
      * @param context 应用上下文环境
-     * @param filename 应用给定的文件名？
-     * @param downloadUrl 下载路径
+     * @param filename 应用给定的文件名
+     * @param downloadUrl 下载路径 url
      * @param fileSaveDir 文件的保存目录
      * @param threadNum  下载线程数
      * @return
      */
+    public final int OVERTIME = 5000;
     public FileDownloadered(Context context,String filename,String downloadUrl,File fileSaveDir,int threadNum)
     {
         try {
@@ -131,9 +134,8 @@ public class FileDownloadered {
             fileService = new DB_DownloadOperator(this.context);   //实例化数据库操作的业务Bean类,需要传一个context值
             URL url = new URL(this.downloadUrl);     //根据下载路径实例化URL
             if(!fileSaveDir.exists()) fileSaveDir.mkdir();  //如果文件不存在的话指定目录,这里可创建多层目录
-
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();   //创建远程连接句柄,这里并未真正连接
-            conn.setConnectTimeout(5000);      //设置连接超时事件为5秒
+            conn.setConnectTimeout(OVERTIME);      //设置连接超时事件为5秒
             conn.setRequestMethod("GET");      //设置请求方式为GET
             conn.setRequestProperty("Accept", "image/gif, image/jpeg, image/pjpeg, " + //设置用户端可以接收的媒体类型
                     "image/pjpeg, application/x-shockwave-flash, application/xaml+xml, " +
@@ -154,13 +156,17 @@ public class FileDownloadered {
             if(conn.getResponseCode() == RESPONSEOK) {//对返回的状态码进行判断,用于检查是否请求成功,返回200时执行下面的代码
                 this.fileSize = conn.getContentLength();  //根据响应获得文件大小
                 this.single = false;
-                if(this.fileSize <= 0 || threadNum == 1) {//无法获得文件大小或者线程数为1 都设置为单线程下载
+                this.unknowsize = false;
+                if(threadNum == 1) //线程数为1 设置单线程flage
                     this.single = true;
-                    threadNum = 1;
-                }
+                /**TODO 暂时只采用单线程下载**/
+                threadNum = 1;
+                if(this.fileSize <= 0 )//无法获取文件大小 设置flag
+                    this.unknowsize = true;
+
                 this.threads = new DownloadThread[threadNum];   //根据下载的线程数量创建下载的线程池
-                /**使用自定义的文件名而不是连接得到的文件名 ?**/
-                this.ac_filename = getFileName(conn);    //获取文件名称
+                /**使用自定义的文件名而不是连接得到的文件名 **/
+                this.ac_filename = getFileName(conn);    //通过连接获取文件名称
                 this.saveFile = new File(fileSaveDir,filename);  //根据文件保存目录和文件名保存文件
                 Map<Integer,Integer> logdata = fileService.getLength_Thread(downloadUrl,filename);    //获取下载记录
                 //如果存在下载记录
@@ -181,14 +187,17 @@ public class FileDownloadered {
                         this.downloadedSize += this.data.get(i+THREADID_START);
                     }
                 }
-                //使用条件运算符求出每个线程需要下载的数据长度（能得到文件大小的情况）
-                if(this.fileSize > 0 && !this.single) {
+                //使用条件运算符求出每个线程需要下载的数据长度 能得到文件大小的情况
+                if(!this.unknowsize ) {
+                    //block = filesize when thread = 1
                     this.block = (this.fileSize % this.threads.length) == 0 ?
                             this.fileSize / this.threads.length :
                             this.fileSize / this.threads.length + 1;
                 }
-                else//单线程情况下 可能为-1
-                    this.block = this.fileSize;
+                else { //无法得到文件大小的情况 可能为-1
+                    this.block = 0;
+                    //this.block = this.fileSize;
+                }
             }else{//请求失败 conn.getResponseCode() ！= RESPONSEOK
                 print("服务器响应错误:" + conn.getResponseCode() + conn.getResponseMessage());//打印错误信息
                 throw new RuntimeException("服务器反馈出错");
@@ -245,9 +254,10 @@ public class FileDownloadered {
                 }
                 this.downloadedSize = 0;   //设置已经下载的长度为0
             }
-            //多线程下载
-            if (!single){
-                for (int i = 0; i < this.threads.length; i++) {//开启线程进行下载
+            //知道文件大小下载
+            if (!unknowsize){
+                //开启线程进行下载
+                for (int i = 0; i < this.threads.length; i++) {
                     int downLength = this.data.get(i + THREADID_START);
                     //通过特定的线程id获取该线程已经下载的数据长度
                     //判断线程是否已经完成下载,否则继续下载
@@ -263,7 +273,21 @@ public class FileDownloadered {
                     }
                 }
             }
-            //单线程下载 必定重新下载？
+            //多线程且不知道文件大小下载
+            else if(!single){
+                for (int i = 0; i < this.threads.length; i++) {
+                    //block = 0
+                    int downLength = this.data.get(i + THREADID_START);
+                    //通过特定的线程id获取该线程已经下载的数据长度
+                    //判断线程是否已经完成下载,否则继续下载
+                    //初始化特定id的线程
+                    this.threads[i] = new DownloadThread(this, url, this.saveFile, this.block, downLength, i + THREADID_START);
+                    //Thread.MIN_PRIORITY = 1;Thread.MAX_PRIORITY = 10,数值越大优先级越高
+                    this.threads[i].setPriority(7);
+                    this.threads[i].start();    //启动线程
+                }
+            }
+            //单线程且不知道文件大小下载
             else{
                 int downLength = this.data.get(0 + THREADID_START);
                 this.threads[0] = new DownloadThread(this, url, this.saveFile, this.block, downLength, 0 + THREADID_START);
@@ -271,6 +295,7 @@ public class FileDownloadered {
                 this.threads[0].start();
             }
             //如果存在下载记录，删除它们，然后重新添加  使得数据的记录能和线程对应
+            //每个线程长度会在线程内更新
             fileService.delete(this.downloadUrl,this.filename);
             fileService.setLength_Thread(this.downloadUrl,this.filename, this.data,"0");
             this.finish =false;

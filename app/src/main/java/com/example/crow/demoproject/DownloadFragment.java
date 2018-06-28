@@ -17,6 +17,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.text.Editable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -201,7 +202,7 @@ public class DownloadFragment extends Fragment {
         downloadManager.delDownloadTask(filename);
         downloadManager.delDownloadFile(filename);
         LinearLayout baseList = (LinearLayout)view.findViewById(R.id.baseList);
-        LinearLayout taskLayout = (LinearLayout)view.findViewById(taskID*ID_offset+UI_offset.TASK_ID);
+        RelativeLayout taskLayout = (RelativeLayout)view.findViewById(taskID*ID_offset+UI_offset.TASK_ID);
         baseList.removeView(taskLayout);
         id.removeID(taskID);
     }
@@ -337,11 +338,11 @@ public class DownloadFragment extends Fragment {
     //ID = ID_offset*idbase + UI_offset
     private int ID_offset = 5;
     public class UI_offset {
-        public final static int BEG_PAUSE_BTN = 0;
-        public final static int DEL_BTN = 1;
-        public final static int TEXT_VIEW = 2;
-        public final static int PRO_BAR = 3;
-        public final static int TASK_ID =4;
+        public final static int BEG_PAUSE_BTN = 1;
+        public final static int DEL_BTN = 2;
+        public final static int TEXT_VIEW = 3;
+        public final static int PRO_BAR = 4;
+        public final static int TASK_ID =5;
     }
 
     public final String PAUSE_SIGN = "暂停";
@@ -381,80 +382,55 @@ public class DownloadFragment extends Fragment {
         int idbase = id.getID();
         task.setId_List(idbase);
         final String filename = task.getFilename();
-        // 显示DownloadTask的控件并添加到自定义布局中
-        //1.最外层LinearLayout
-        LinearLayout taskLayout = new LinearLayout(mContext);
-        LinearLayout.LayoutParams taskLayoutParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        taskLayout.setLayoutParams(taskLayoutParams);
-        //透明背景
-        taskLayout.setBackgroundColor(Color.argb(0, 255, 255, 0));
-        taskLayout.setOrientation(LinearLayout.VERTICAL);
-        
 
-        //最外层LinearLayout ID
+        /****************************************************/
+        //使用预设的任务布局 并获取其id
+        LayoutInflater taskInflater = LayoutInflater.from(mContext);
+        View taskView = taskInflater.inflate(R.layout.task_layout,null);
+        LinearLayout taskLayout = taskView.findViewById(R.id.taskLayout);
+        RelativeLayout controlLayout = taskView.findViewById(R.id.controlLayout);
+        TextView filename_text = taskView.findViewById(R.id.textView2);
+        final Button beg_pau_btn = taskView.findViewById(R.id.button);
+        final Button del_btn = taskView.findViewById(R.id.button2);
+        ProgressBar taskProgress = taskView.findViewById(R.id.progressBar);
+        /****************************************************/
+
+        //1.最外层 RelativeLayout
+        //最外层 RelativeLayout ID
         taskLayout.setId(idbase*ID_offset+UI_offset.TASK_ID);
-        //1.1 内层 RelativeLayout
-        RelativeLayout controlLayout = new RelativeLayout(mContext);
-        RelativeLayout.LayoutParams controlLayoutParams = new RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        //controlLayout.setPadding(0, (int) (fDimRatio * 5), 0, 0);
-        controlLayout.setLayoutParams(controlLayoutParams);
 
+        //1.1 内层 RelativeLayout
+//        RelativeLayout controlLayout = new RelativeLayout(mContext);
         //显示文件名 TextView
-        //1.1.1 TextView布局 靠左
-        RelativeLayout.LayoutParams tvAddParam = new RelativeLayout.LayoutParams(
-                600,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        tvAddParam.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-        TextView filename_text = new TextView(mContext);
+        //1.1.1 TextView 布局 靠左
         filename_text.setText(filename);
-        filename_text.setLayoutParams(tvAddParam);
         //TextView ID
         filename_text.setId(idbase*ID_offset+UI_offset.TEXT_VIEW);
 
         //1.1.2开始暂停按钮 Button按钮布局 靠右
-        RelativeLayout.LayoutParams btnAddParam = new RelativeLayout.LayoutParams(
-                240,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        // 靠右放置
-        btnAddParam.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        final Button beg_pau_btn = new Button(mContext);
-
         //默认开始按钮
         beg_pau_btn.setText(RESUME_SIGN);
-        beg_pau_btn.setLayoutParams(btnAddParam);
-
-        //使用shape绘制控件
-        Drawable btn_shape = ContextCompat.getDrawable(mContext,R.drawable.button_shape);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            beg_pau_btn.setBackground(btn_shape);
-        } else {
-            beg_pau_btn.setBackgroundDrawable(btn_shape);
-        }
         //开始暂停按钮ID
         beg_pau_btn.setId(idbase*ID_offset+UI_offset.BEG_PAUSE_BTN);
 
         //1.1.3取消按钮 Button按钮布局 开始/暂停的左边
-        RelativeLayout.LayoutParams btnDelParam = new RelativeLayout.LayoutParams(
-                240,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        btnDelParam.addRule(RelativeLayout.LEFT_OF, beg_pau_btn.getId());
-        btnDelParam.addRule(RelativeLayout.RIGHT_OF, filename_text.getId());
-        final Button del_btn = new Button(mContext);
         del_btn.setText(CANCEL_SIGN);
-        del_btn.setLayoutParams(btnDelParam);
-        //使用shape绘制控件 和开始按钮使用同一个shape
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            del_btn.setBackground(btn_shape);
-        } else {
-            del_btn.setBackgroundDrawable(btn_shape);
-        }
         //取消按钮ID
         del_btn.setId(idbase*ID_offset+UI_offset.DEL_BTN);
 
+        //修改ID后更改一下相对布局的参数
+        RelativeLayout.LayoutParams btnDelParam = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        btnDelParam.addRule(RelativeLayout.LEFT_OF, del_btn.getId());
+        beg_pau_btn.setLayoutParams(btnDelParam);
+
+        RelativeLayout.LayoutParams tvAddParam = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        tvAddParam.addRule(RelativeLayout.LEFT_OF,beg_pau_btn.getId());
+        tvAddParam.addRule(RelativeLayout.CENTER_VERTICAL);
+        filename_text.setLayoutParams(tvAddParam);
 
         //开始暂停按钮事件
         beg_pau_btn.setOnClickListener(new View.OnClickListener() {
@@ -496,26 +472,16 @@ public class DownloadFragment extends Fragment {
                 alert.show();
             }
         });
-
-        controlLayout.addView(filename_text);
-        controlLayout.addView(beg_pau_btn);
-        controlLayout.addView(del_btn);
-        taskLayout.addView(controlLayout,0);
         //1.2内层 进度条
-        ProgressBar taskProgress = new ProgressBar(mContext,null,android.R.attr.progressBarStyleHorizontal);
         taskProgress.setVisibility(View.VISIBLE);
         taskProgress.setMax(task.getFilesize());
         taskProgress.setProgress(task.getDownsize());
-        //使用shape绘制进度条控件
-        Drawable pro_shape = ContextCompat.getDrawable(mContext,R.drawable.progressbar_shape);
-        taskProgress.setProgressDrawable(pro_shape);
-
+        //ProgressBar ID
         taskProgress.setId(idbase*ID_offset+UI_offset.PRO_BAR);
-        taskLayout.addView(taskProgress,1);
 
-        baseLayout.addView(taskLayout,-1);
-        //baseList.addView(taskLayout);
+        baseLayout.addView(taskView);
 
+        //进度条更新
         task.setHandler(handler);
         task.setProgressbar(taskProgress);
     }

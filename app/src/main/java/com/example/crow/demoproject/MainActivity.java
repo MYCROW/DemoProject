@@ -6,6 +6,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.content.Intent;
@@ -14,6 +16,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -67,10 +70,6 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //LinearLayout linearLayout = findViewById(R.id.main_line);
-
-        //linearLayout.setBackground();
-
         setContentView(R.layout.activity_main);
         pagerAdapter = new MainFragmentPagerAdapter(getSupportFragmentManager(), this);
         viewPager = findViewById(R.id.viewPager);
@@ -92,25 +91,29 @@ public class MainActivity extends FragmentActivity implements DownloadFragment.D
         tabLayout = findViewById(R.id.tabList);
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.setTabMode(TabLayout.MODE_FIXED);
-
+//        用Shape绘制tabLayout控件
+//        Drawable tab_background = ContextCompat.getDrawable(this,R.drawable.tab_background);
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+//            tabLayout.setBackground(tab_background);
+//        } else {
+//            tabLayout.setBackgroundDrawable(tab_background);
+//        }
         verifyStoragePermissions(this);
 
         nullflag =true;
         loadFragment();
+
+        Drawable main_background = ContextCompat.getDrawable(this,R.drawable.main_background);
+        LinearLayout linearLayout = findViewById(R.id.main_line);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            linearLayout.setBackground(main_background);
+        } else {
+            linearLayout.setBackgroundDrawable(main_background);
+        }
     }
 
     /**确保DownloadFragment和FinishFragment不为null**/
     void loadFragment(){
-//        if(getFinishFragment && getFinishFragment)
-//            return;
-//        if(pagerAdapter.getDownloadFragment == true) {
-//            this.downloadFragment = pagerAdapter.downloadFragment;
-//            getDownloadFragment = true;
-//        }
-//        if(pagerAdapter.getFinishFragment == true){
-//            this.finishFragment = pagerAdapter.finishFragment;
-//            getFinishFragment = true;
-//        }
         if(pagerAdapter.downloadFragment != null) {
             downloadFragment = pagerAdapter.downloadFragment;
             nullflag = false;

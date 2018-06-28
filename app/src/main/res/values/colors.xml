@@ -3,5 +3,11 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="colorBackground">#ffffff</color>
+    <color name="colorTab">#ffffff</color>
     <color name="transparent">#55ff</color>
+    <color name="colorTask">#ffff00</color>
+    <color name="colorButton">#ff9933</color>
+    <color name="colorStroke">#000000</color>
+    <color name="colorTextview">#ffffa0</color>
 </resources>
